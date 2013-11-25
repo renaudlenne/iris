@@ -1,5 +1,4 @@
-Outdated installation instructions are on the website:  
-http://qwebirc.org/faq  
+Outdated installation instructions are at https://github.com/atheme/iris
 
 Additional dependencies:  
 * Node and node package manager (>= 0.6.0) --- see `package.json`
