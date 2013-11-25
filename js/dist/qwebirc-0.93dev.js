@@ -6954,7 +6954,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             command: "MODE {target} {mode} {args}"
         },
         AUTH: {
-            command: "AUTHSERV AUTH {username} {password}"
+            command: "MSG NickServ {username} {password}"
         },
         KICK: {
             command: "KICK {channel} {kickee} :{message}"
