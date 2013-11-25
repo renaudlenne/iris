@@ -6,15 +6,17 @@
             return !validator.test(text, $ele);
         });
         var failbool = !!failed;
-        var controlpar = $ele.getParent('.control-group')
+        var $controlpar = $ele.getParent('.control-group')
                             .toggleClass('has-error', failbool);
         if (failbool) {
-            getTemplate("failed-validator", function(template) {
-                Elements.from(template(failed)).inject(controlpar);
-                // $ele.focus();
-            });
+            if($controlpar.getElements(".help-block").filter(function(ele) {return ele.html() === failed.description}).length === 0) {
+                getTemplate("failed-validator", function(template) {
+                    Elements.from(template(failed)).inject($controlpar);
+                    // $ele.focus();
+                });
+            }
         } else {
-            controlpar.getElements('.help-block').dispose();
+            $controlpar.getElements('.help-block').dispose();
         }
         return !failed;
     }

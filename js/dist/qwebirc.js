@@ -213,13 +213,13 @@ helpers = this.merge(helpers, Handlebars.helpers); data = data || {};
   var buffer = "", stack1, functionType="function", escapeExpression=this.escapeExpression;
 
 
-  buffer += "<div class='input'><div class='tt-ahead input-group'><span class='input-group-addon user'><span class='status "
+  buffer += "<form class='input'><div class='tt-ahead input-group'><span class='input-group-addon user'><span class='status "
     + escapeExpression(((stack1 = depth0.status),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
     + "'></span><span class=\"nickname\">"
     + escapeExpression(((stack1 = depth0.nick),typeof stack1 === functionType ? stack1.apply(depth0) : stack1))
     + "</span></span>"
     + "<input class='tt-hint hidden' type='text' autocomplete='off' spellcheck='off' disabled>"
-    + "<input class='tt-query form-control irc-input decorated' type='text' autocomplete='off' spellcheck='off'><span class='input-group-btn'><button class='btn btn-default send' type='button'>&gt;</button></span></div></div>";
+    + "<input class='tt-query form-control irc-input decorated' type='text' autocomplete='off' spellcheck='off'><span class='input-group-btn'><button class='btn btn-default send' type='submit'>&gt;</button></span></div></form>";
   return buffer;
   });
 
@@ -1489,9 +1489,9 @@ var join = function(by, xs) {
         return str.split(by);
     },
 
-    restRight = _.autoCurry(function(xs) {
-        return xs.slice(0, xs.length - 1);
-    }),
+    // restRight = function(xs) {
+    //     return xs.slice(0, xs.length - 1);
+    // },
 
     test = _.autoCurry(function(reg, str) {
         return str.test(reg);
@@ -1589,7 +1589,7 @@ util.windowNeedsInput = _.partial(_.contains, INPUT_TYPES);
 //String -> String
 //formatChannelStrings("test,test2,#test3,#tes#t4,test5,test6") => "#test,#test2,#test3,#tes#t4,#test5,#test6"
 util.formatChannelString = _.compose(joinComma, _.uniq, _.partial(_.func.map, formatChannel), splitChan);
-util.unformatChannelString = _.compose(_.uniq, _.partial(_.func.map, unformatChannel), splitChan);
+util.unformatChannelString = _.compose(_.uniq, _.partial(_.func.map, formatChannel), splitChan);
 
 util.formatURL = function(link) {
     link = util.isChannel(link) ? link.replace("#", "@") : link;
@@ -1742,11 +1742,12 @@ util.removePrefix = function(nc, pref) {
     return nc.prefixes = nc.prefixes.replaceAll(pref, "");
 };
 
-//if theres a prefix it gets returned
-//i dont think its possible to have multiple prefixes
+//get prefixs on a nick
 util.prefixOnNick = _.autoCurry(function(prefixes, nick) {
-    var c = nick.charAt(0);
-    return util.validPrefix(prefixes, c) ? [c, nick.slice(1)] : ['', nick];
+    for (var i = 0; i < nick.length; i++) {
+        if(!util.validPrefix(prefixes, nick.charAt(i))) break;
+    }
+    return [nick.slice(0, i), nick.slice(i)];
 });
 
 util.getPrefix = _.compose(_.first, util.prefixOnNick);
@@ -1844,16 +1845,13 @@ util.getEnclosedWord = function(str, pos) {
 };
 
 // NOT cryptographically secure! 
+//http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
 util.randHexString = function(numBytes) {
-    function getByte() {
-        return (((1 + Math.random()) * 0x100) | 0).toString(16).substring(1);
-    };
-
-    var l = [];
-    for (var i = 0; i < numBytes; i++) {
-        l.push(getByte());
+    var id = "";
+    for (; numBytes > 0; numBytes--) {
+        id += (((1 + Math.random()) * 0x100) | 0).toString(16).slice(1);
     }
-    return l.join("");
+    return id;
 };
 
 
@@ -1972,26 +1970,31 @@ util.generateID = (function() {
         SHOW_NICKLIST: "Show nickname list in channels",
         SHOW_TIMESTAMPS: "Show timestamps",
         FONT_SIZE: "Set font size",
+        VOLUME: "Volume",
 
 
-        NOTIFY_ON_MENTION: "When nick mentioned:",
-        NOTIFY_ON_PM: "When private messaged:",
-        NOTIFY_ON_NOTICE: "When channel notice:",
         AUTO_OPEN_PM: "Automatically select window on private message:",
         FLASH: "flash",
         BEEP: "beep",
         PM: "pm",
+        MENTION: "mentioned",
         MESSAGE_PLACEHOLDER: ' something ... ',
         NICK_PLACEHOLDER: ' someone ... ',
+        TYPE_PLACEHOLDER: 'type test',
         DELETE_NOTICE: 'remove',
         ADD_NOTICE: 'Add notifier',
         USER_NOTICE: 'User:',
+        TYPE_NOTICE: 'Type:',
         MESSAGE_NOTICE: 'Message:',
         AUTOESCAPE: 'Escape text',
-        HIGHLIGHT: 'Highlight',
         MENTIONED: 'Mentioned',
         ESCAPE_HINT: 'This text is transformed into a regular expressions - autoescaping will check for the exact text you entered',
         DESKTOP_NOTICES: 'Allow us to send desktop notifications if supported (on any notice with flash):',
+        IGNORE_CASE: 'Case insensitive',
+        NOTUS: "Not us",
+        NOTUS_HINT: "Not our message",
+        HIGHLIGHT: "hl",
+        HIGHLIGHT_HINT: "highlight",
 
         ENABLE: 'Enable',
         DISABLE: 'Disable'
@@ -2494,6 +2497,10 @@ inputurl.addPattern(bbmatch,//this pattern needs to be optimized
         return util.format(prop, this);
     });
 
+    engine.registerHelper("lang", function(prop) {
+        return lang[prop];
+    });
+
     /******************
         Compiliation
     *********************/
@@ -2590,7 +2597,7 @@ config.OptionModel = new Class({
             "show_nicklist": !Browser.isMobile,
             "show_timestamps": true,
             "font_size": 12,
-            "volume": 100, //0-10
+            "volume": 100, //0-100
 
             "completer": {
                 "intrusive": Browser.isDecent,
@@ -2607,32 +2614,101 @@ config.OptionModel = new Class({
             "style_saturation": 0,
             "style_brightness": 0,
 
-            "notices": {
-                "on_mention": {flash:true, beep:true, pm: false},
-                "on_pm": {flash:true, beep:true, pm: true},
-                "on_notice": {flash:false, beep:true, pm: true}
-            },
-            "custom_notices": [],
-            "default_notice": function() {
-                return {
-                        nick: null,
-                        msg: '',
-                        flash: false,
-                        beep: false,
-                        pm: false,
-                        id: String.uniqueID(),
-                        autoescape: true
-                    };
+            "standard_notices": [
+                {
+                    type: "^(?!SERVER)+NOTICE+$",//notice not server notice
+                    classes: '',
+                    beep: true,
+                    tabhl: ui.HIGHLIGHT.speech,
+                    id: 'notice'
+                },
+                {
+                    type: "PRIVMSG$",
+                    flash: true,
+                    beep: true,
+                    pm: true,
+                    tabhl: ui.HIGHLIGHT.speech,
+                    id: 'pm'
+                },
+                {
+                    type: "^OUR",
+                    classes: 'our-msg',
+                    id: 'ourmsg'
+                },
+                {//match bots
+                    nick: "(^tf2)|((serv|bot)$)",
+                    classes: 'bot',
+                    types: [ui.WINDOW.channel],
+                    "case": true,
+                    id: 'bot'
+                },
+                {
+                    msg: "^\\!",
+                    classes: 'command',
+                    types: [ui.WINDOW.channel],
+                    id: 'cmd'
+                },
+                {
+                    mentioned: true,
+                    highlight: 'mentioned',
+                    notus: true,
+                    tabhl: ui.HIGHLIGHT.us,
+                    id: 'mention'
+                },
+                {
+                    nick: "^((?!(^tf2|bot$|serv$)).)*$",
+                    mentioned: true,
+                    classes: '',
+                    beep: true,
+                    pm: true,
+                    notus: true,
+                    "case": true,
+                    id: 'onmention'
+                },
+                {
+                    nick: "^((?!(^tf2|bot$|serv$)).)*$",
+                    msg: "^((?!(^\\!)).)*$", //dont hl commands
+                    classes: '',
+                    highlight: true,
+                    notus: true,
+                    "case": true,
+                    tabhl: ui.HIGHLIGHT.activity,
+                    types: [ui.WINDOW.channel],
+                    id: 'hl'
                 }
+            ],
+
+            "custom_notices": []
         },
         key: cookies.options,
         minimize: true
     },
 
+    defaultNotice: function() {//default custom notice
+        return {
+                // nick: '',
+                // msg: '',
+                // type: '',
+                // flash: false,
+                // beep: false,
+                // pm: false,
+                id: String.uniqueID(),
+                autoescape: true,
+                description: ''
+            };
+    },
+
+    notice_filter: function(data) {
+        return !(!data.msg || data.msg.trim() === "") || !(!data.nick || data.nick.trim() === "") || !(!data.type || data.type.trim() === "") || data.notus;
+    },
+
+    //storing procedures
     save: function() {
-        this.set("custom_notices", _.reject(this.get("custom_notices"), function(data) { return data.msg.trim() === "" }));//cleanup
+        this.set("custom_notices", _.filter(this.get("custom_notices"), this.notice_filter));//cleanup
+        this.set("standard_notices", _.filter(this.get("standard_notices"), this.notice_filter));//cleanup
         return this.parent();
     },
+
 
     set: function(key, data) {
         var props = key.split(".");
@@ -3350,16 +3426,13 @@ irc.CommandHistory = new Class({
 
 irc.NodeConnection = new Class({
     Implements: [Options, Events],
-    Binds: ["recv", "error", "_connected", "_disconnected"],
+    Binds: ["_recv", "_error"],
     options: {
-        socket: {
-            url: document.location.hostname
-        },
+        socket_connect: document.location.hostname,
         nickname: "ircconnX",
         password: '',
         serverPassword: null,
         autoConnect: true,
-        autoRejoin: false,
         debug: true,
         floodProtection: false,
         /*server: xxx,
@@ -3383,21 +3456,59 @@ irc.NodeConnection = new Class({
         stripColors: false,
         channelPrefixes: "&#",
         messageSplit: 512*/
+        autoretry: true,
         retryInterval: 5000,
-        retryScalar: 2
+        // retryAttempts: 30,//retry for 60 seconds
+
+        clientID: util.randHexString(16)
     },
     connected: false,
 
     initialize: function(options) {
         var self = this;
-        self.setOptions(options);
-        var ip = util.formatter("{url}", self.options.socket);
-        var socket = self.socket = io.connect(ip);
+        options = self.setOptions(options).options;
+
+        var socket = self.socket = io.connect(options.socket_connect, {
+          'reconnect': options.autoretry,
+          'reconnection delay': options.retryInterval,
+          'max reconnection attempts': options.retryAttempts
+        });
+
         var $evts = {
-            "raw": self.recv,
-            "echo": _.log,
-            "connected": self._connected,
-            "disconnect": self._disconnected,
+            "raw": self._recv,
+
+            "connected": function() {
+                self.connected = true;
+                self.attempts = 0;
+                self.fireEvent("connected");
+                // this.__retry = this.options.retryInterval;
+            },
+            "disconnect": function() {
+                self.connected = false;
+            },
+            "reconnect": function() {
+                console.log("reconnected");
+                self.socket.emit("reconnect", options);
+            },
+            "reconnecting": function() {
+                console.log("reattempt");
+                self.fireEvent("retry", {
+                    next: options.retryInterval
+                });
+            },
+
+            "lostConnection": function() {
+                self.fireEvent("lostConnection", self.attempts++);
+                self.connected = false;
+            },
+            "abort": function() {
+                new ui.Alert({
+                    title: "Lost connection to IRC server",
+                    text: "Server lost connection to the IRC server"
+                });
+                self.connected = false;
+            },
+
             "max_connections": function() {
                 new ui.Alert({
                     title: 'Maximum connections reached',
@@ -3407,11 +3518,8 @@ irc.NodeConnection = new Class({
                     }
                 });
             },
-            "terminated": function(message) {
-                alert(message);
-            },
-            // "connected": _.log,
-            "error": self.error
+            "echo": _.log,
+            "error": self._error
         };
 
         _.each($evts, function(fn, key) {
@@ -3432,24 +3540,12 @@ irc.NodeConnection = new Class({
         this.socket.emit("irc", this.options);
     },
 
-    //irc connection on server in
-    _connected: function() {
-        this.connected = true;
-        this.fireEvent("connected");
-        this.__retry = this.options.retryInterval;
-    },
-
     disconnect: function() {
         this.socket.emit("quit");
         this.socket.disconnect();
     },
 
-    _disconnected: function() {
-        this.connected = false;
-        this.autoretry();
-    },
-
-    recv: function(data) {
+    _recv: function(data) {
         var processed = util.parseIRCData(data.raw);
         this.fireEvent("recv", processed);
     },
@@ -3464,10 +3560,10 @@ irc.NodeConnection = new Class({
         }
     },
 
-    error: function() {
+    _error: function() {
         console.error(arguments);
-        this.fireEvent("error");
-    },
+        this.fireEvent("error", arguments);
+    }/*,
 
     autoretry: function() {
         if(this.connected) {return;}
@@ -3475,9 +3571,9 @@ irc.NodeConnection = new Class({
         this.fireEvent("retry", {
             next: next
         });
-        this.socket.emit("retry", "please");
+        this.socket.emit("retry", this.options);
         return _.delay(this.autoretry, next, this);
-    }
+    }*/
 });
 
 
@@ -3490,7 +3586,7 @@ auth.bouncerAuth = $lambda(false);
 // //ircclient with added event support
 irc.IRCClient = new Class({
     Implements: [Options, Events, irc.Commands],
-    Binds: ["lostConnection", "send", "quit", "connected","retry", "_ndispatch", "_tdispatch"],
+    Binds: ["lostConnection", "send", "quit", "connected",  "retry", "_ndispatch", "_tdispatch"],
     options: {
         minRejoinTime: [0],
         networkServices: [],
@@ -3550,7 +3646,8 @@ irc.IRCClient = new Class({
 
     //connection methods
     connect: function() {
-        return this.connection.connect();
+        this.connection.connect();
+        return this;
     },
 
     connected: function() {
@@ -3586,9 +3683,13 @@ irc.IRCClient = new Class({
         return this;
     },
 
-    lostConnection: function() {
-        console.log("todo");
+    lostConnection: function(attempt) {
         console.log(arguments);
+        this.writeMessages(lang.connRetry, {
+            retryAttempts: attempt
+        }, {
+            channels: "ALL"
+        });
     },
 
     retry: function(data) {
@@ -3804,6 +3905,13 @@ irc.IRCClient = new Class({
     *       private server event handlers             *
     **************************************************/
     _signOn: function(/*data*/) {
+        if(this.__signedOn) {//server/client crashed reconnect
+            console.log("REjoining " + util.formatChannelString(this.channels));
+            return this.send(format(cmd.JOIN, {
+                channel: util.formatChannelString(this.channels)
+            }));
+        }
+
         var options = this.options,
             channels;
 
@@ -5618,15 +5726,17 @@ function addClientEvents(client, windows) { // mi gusta xD
             return !validator.test(text, $ele);
         });
         var failbool = !!failed;
-        var controlpar = $ele.getParent('.control-group')
+        var $controlpar = $ele.getParent('.control-group')
                             .toggleClass('has-error', failbool);
         if (failbool) {
-            getTemplate("failed-validator", function(template) {
-                Elements.from(template(failed)).inject(controlpar);
-                // $ele.focus();
-            });
+            if($controlpar.getElements(".help-block").filter(function(ele) {return ele.html() === failed.description}).length === 0) {
+                getTemplate("failed-validator", function(template) {
+                    Elements.from(template(failed)).inject($controlpar);
+                    // $ele.focus();
+                });
+            }
         } else {
-            controlpar.getElements('.help-block').dispose();
+            $controlpar.getElements('.help-block').dispose();
         }
         return !failed;
     }
@@ -5740,29 +5850,41 @@ ui.IUIOptions = new Class({
 
     config: function() {
         var self = this;
+        var options = self.options;
         if(self.uiOptions instanceof config.OptionModel) return this;
         var uiOptions = self.uiOptions = self.uiOptions2 = new config.OptionModel({
-            defaults: self.options.uiOptionsArg
+            defaults: options.uiOptionsArg
         });
-        function setCustomNotice(notices) {
-            self.theme.customNotices = _.chain(notices).clone()
-                .reject(function(data) {
-                    return !(data.msg || data.msg.trim() === "") && (!data.nick || data.nick.trim() === "");
-                })
+        function setNotices() {
+            var notices = uiOptions.get("standard_notices").concat(uiOptions.get("custom_notices"));
+            var notifiers = _.chain(notices)
+                .filter(uiOptions.notice_filter)
                 .map(function(notice) {
-                    return {
-                        msg: new RegExp(notice.autoescape ? String.escapeRegExp(notice.msg) : notice.msg),
+                    var onotice = {
                         beep: notice.beep,
-                        flash: notice.flash
-                    };
+                        flash: notice.flash,
+                        pm: notice.pm,
+
+                        mentioned: notice.mentioned,
+                        notus: notice.notus,
+                        highlight: notice.highlight,
+                        tabhl: notice.tabhl,
+                        classes: notice.classes,
+                        types: notice.types
+                    }
+                    _.each(["msg", "nick", "type"], function(type) {
+                        if(notice[type]) {
+                            onotice[type] = new RegExp(notice.autoescape ? String.escapeRegExp(notice[type]) : notice[type],//format regex
+                                        notice.case ? "i" : "");//set flag
+                        }
+                    });
+
+                    return _.clean(onotice);
                 })
-                .value();
-        }
-        function setStandardNotice(notices) {
-            _.each(self.theme.messageParsers, function(parser) {
-                if(_.has(notices, parser.id) )
-                    _.extend(parser, notices[parser.id]);
-            });
+                .value()
+            
+            self.theme.messageParsers.empty().combine(notifiers);
+            self.theme.config = uiOptions;
         }
 
         uiOptions.on({
@@ -5770,8 +5892,8 @@ ui.IUIOptions = new Class({
                 self.updateStylesheet();
             },
             "change:font_size": self.updateStylesheet,
-            "change:custom_notices": setCustomNotice,
-            "change:notices": setStandardNotice,
+            "change:custom_notices": setNotices,
+            "change:standard_notices": setNotices,
             "change:show_nicklist": function(state) {
                 _.each(self.windowArray, function(win){win.toggleNickList()});
             },
@@ -5783,13 +5905,12 @@ ui.IUIOptions = new Class({
                 });
             }
         });
-        setCustomNotice(uiOptions.get("custom_notices"));
-        setStandardNotice(uiOptions.get("notices"));
+        setNotices();
 
         self.setModifiableStylesheet({
-            style_hue: self.options.hue || self.uiOptions.get("style_hue"),
-            style_saturation: self.options.saturation || self.uiOptions.get("style_saturation"),
-            style_brightness: self.options.brightness || self.uiOptions.get("style_brightness")
+            style_hue: options.hue || self.uiOptions.get("style_hue"),
+            style_saturation: options.saturation || self.uiOptions.get("style_saturation"),
+            style_brightness: options.brightness || self.uiOptions.get("style_brightness")
         });
         return self;
     },
@@ -6058,6 +6179,7 @@ ui.INotifiers = new Class({
     }
 });
 })();
+var BASE = "login";
 
 ui.StandardUI = new Class({
     // Extends: ui.NotificationUI,
@@ -6118,7 +6240,7 @@ ui.StandardUI = new Class({
 
         function checkRoute(data) {
             var request = util.unformatURL(data.request).toLowerCase();
-            console.log("Route: %s Formatted: %s", data.request, request);
+            // console.log("Route: %s Formatted: %s", data.request, request);
 
             if(self.active && request === self.active.identifier) {
                 return;
@@ -6206,8 +6328,8 @@ ui.StandardUI = new Class({
     },
 
     updateURI: function(url) {
-        // hasher.setHash(util.formatURL(url || this.active.identifier));
-        if(this.router) this.router.navigate(util.formatURL(url || this.active.identifier));
+        url = url || this.active.identifier;
+        if(this.router && (url != BASE || location.hash)) this.router.navigate(util.formatURL(url));
     },
 
     whoisURL: function(e, target) {
@@ -6262,7 +6384,6 @@ ui.Interface = new Class({
         networkName: "" /* Quake Net */,
         networkServices: [],//registered hosts to treat as a server admin
 
-        initialNickname: "",
         minRejoinTime: [5, 20, 300], //array - secs between consecutive joins to a single channel - see js/src/irc/ircclient@canjoinchan
 
         validators: {//test is a helper from ircutils
@@ -6300,17 +6421,23 @@ ui.Interface = new Class({
 
     //Note removed option args to configure router. May support it later.
     initialize: function(element, UI, options) {
-        this.setOptions(options);
-        var self = this,
-            opts = self.options;
+        options = this.setOptions(options).options;
+        var self = this;
+        var settings = self.options.settings = new config.Settings(options.settings);
+        
+        //parse query string
+        var query = window.location.search;
+        if(query) {
+            var parsed = query.slice(1).parseQueryString();
+            if(parsed.channels) settings.set("channels", concatUnique(settings.get("channels"), util.unformatChannelString(parsed.channels)));
+        }
 
         window.addEvent("domready", function() {
-            var settings = self.options.settings = new config.Settings(opts.settings);
             self.element = $(element);
 
-            self.ui = new UI(self.element, new ui.Theme(opts.theme), opts); //unconventional naming scheme
+            self.ui = new UI(self.element, new ui.Theme(options.theme), options); //unconventional naming scheme
 
-            if(opts.node) { Asset.javascript(opts.socketio); }
+            if(options.node) { Asset.javascript(options.socketio); }
             //cleans up old properties
             if(settings.get("newb")) {
                 self.welcome();
@@ -6319,7 +6446,7 @@ ui.Interface = new Class({
             self.ui.loginBox();
 
             self.ui.addEvent("login:once", function(loginopts) {
-                var ircopts = _.extend(Object.subset(opts, ['settings', 'specialUserActions', 'minRejoinTime', 'networkServices', 'loginRegex', 'node']),
+                var ircopts = _.extend(Object.subset(options, ['settings', 'specialUserActions', 'minRejoinTime', 'networkServices', 'loginRegex', 'node']),
                                         loginopts);
 
                 var client = self.IRCClient = new irc.IRCClient(ircopts/*, self.ui*/);
@@ -6333,21 +6460,16 @@ ui.Interface = new Class({
                     }, true);
                 });
 
-                window.onbeforeunload = function(e) {
-                    if (client.isConnected()) {//ie has gotten passed the IRC gate
-                        var message = "This action will close all active IRC connections.";
-                        if ((e = e || window.event)) {
-                            e.returnValue = message;
+                window.addEvents({
+                    "beforeunload": function(e) {
+                        if (client.isConnected()) {//ie has gotten passed the IRC gate
+                            var message = "This action will close all active IRC connections.";
+                            (e || window.event).returnValue = message;//legacy ie
+                            return message;
                         }
-                        return message;
-                    }
-                };
-                window.addEvent('unload', client.quit);
-                window.onunload = client.quit;
-
-                if(!auth.enabled) {
-                    self.ui.beep();
-                }
+                    },
+                    "unload": client.quit
+                });
 
                 self.fireEvent("login", {
                     'IRCClient': client,
@@ -6360,18 +6482,7 @@ ui.Interface = new Class({
         ui.WelcomePane.show(this.ui, _.extend({
             element: this.element,
             firstvisit: true
-        }, this.options));
-
-        var settings = this.options.settings;
-        storage.remove("qweb-new");
-        ['account', 'password', 'nickname', 'channels'].each(function(key) {
-            var skey = "qweb-" + key;
-            var val = storage.get(skey);
-            if(val) {
-                settings.set(key, val);
-            }
-            storage.remove(skey);
-        });
+        }, this.options)); 
     }
 });
 
@@ -6497,7 +6608,7 @@ ui.QUI = new Class({
                 keys: 'ctrl+c',
                 description: '',
                 handler: _.partial(util.wrapSelected, '.window:not(.hidden) .input .irc-input', util.getStyleByName('colour').bbcode)
-            },
+            }/*,
             submitInput: {
                 keys: 'enter',
                 description: '',
@@ -6507,7 +6618,7 @@ ui.QUI = new Class({
                         $tar.getParent('.window').retrieve('window').sendInput(e, $tar);
                     }
                 }
-            }
+            }*/
         }
     },
 
@@ -6903,7 +7014,6 @@ sound.SoundPlayer = new Class({
             var soundinit = function() {
                 var sm = self.sm = window.soundManager;
                 //https://www.scirra.com/blog/44/on-html5-audio-formats-aac-and-ogg
-                // var extension = self.extension = sm.hasHTML5 && (Browser.firefox || Browser.opera || Browser.chrome) ? ".ogg" : ".mp3";
                 sm.setup({
                     url: opts.swfurl,
                     preferFlash: opts.preferFlash,
@@ -6955,6 +7065,7 @@ ui.Theme = new Class({
         });
 
         self.highlightClasses.channels = {};
+        self.config = config;
     },
 
     //I'm under the assumption i dont need to strip tags as handlebars should escape them for me
@@ -6984,10 +7095,9 @@ ui.Theme = new Class({
 
         var themed = type ? self.formatText(type, data, highlight) : data;
         var result = self.colourise(themed);
-        var timestamp = templates.timestamp({time:util.IRCTimestamp(new Date())});
-        var msghtml = timestamp + result;
+        var timestamp = self.config && self.config.get("show_timestamps") ? templates.timestamp({time:util.IRCTimestamp(new Date())}) : "";
         $ele.addClass('colourline')
-            .insertAdjacentHTML('beforeend', msghtml);//insertAdjacentHTML may render escaped chars incorrectly
+            .insertAdjacentHTML('beforeend', timestamp + result);//insertAdjacentHTML may render escaped chars incorrectly
         return result;
     },
 
@@ -7057,62 +7167,7 @@ ui.Theme = new Class({
         return util.urlifier.parse(text);
     },
 
-    messageParsers: [
-        {
-            type: /^(?!SERVER)+NOTICE+$/,//notice not server notice
-            classes: '',
-            beep: true,
-            id: 'on_notice',
-            tabhl: ui.HIGHLIGHT.speech
-        },
-        {
-            type: /PRIVMSG$/,
-            flash: true,
-            beep: true,
-            pm: true,
-            id: 'on_pm',
-            tabhl: ui.HIGHLIGHT.speech
-        },
-        {
-            type: /^OUR/,
-            classes: 'our-msg'
-        },
-        {//match bots
-            nick: /(^tf2)|((serv|bot)$)/i,
-            classes: 'bot',
-            types: [ui.WINDOW.channel]
-        },
-        {
-            msg: /^\!/,
-            classes: 'command',
-            types: [ui.WINDOW.channel]
-        },
-        {
-            mentioned: true,
-            highlight: 'mentioned',
-            notus: true,
-            tabhl: ui.HIGHLIGHT.us
-        },
-        {
-            nick: /^((?!(^tf2|bot$|serv$)).)*$/i,
-            mentioned: true,
-            classes: '',
-            beep: true,
-            pm: true,
-            notus: true,
-            id: 'on_mention'//for filtering
-        },
-        {
-            nick: /^((?!(^tf2|bot$|serv$)).)*$/i,
-            msg: /^((?!(^\!)).)*$/, //dont hl commands
-            classes: '',
-            highlight: true,
-            notus: true,
-            id: 'highlighter',
-            tabhl: ui.HIGHLIGHT.activity,
-            types: [ui.WINDOW.channel]
-        }
-    ],
+    messageParsers: [],
 
     highlightClasses: ['highlight1', 'highlight2'/*, 'highlight3'*/],
 
@@ -7121,13 +7176,13 @@ ui.Theme = new Class({
             tabHighlight = ui.HIGHLIGHT.none,
             highlights = self.highlightClasses,
             nick = win.client.nickname,
-            notus = data.n !== nick,
-            parsers = _.clone(self.messageParsers).concat(self.customNotices);
+            notus = data.n !== nick;
 
         if(data && type && /(NOTICE|ACTION|MSG)$/.test(type)) {
-            if(data.m)
+            if(data.m) {
                 $ele.addClass('message');
-            _.each( parsers , function(parser) {
+            }
+            _.each( self.messageParsers , function(parser) {
                 //sorry little crazy :)
                 if( (!parser.notus || notus) &&//implications - organized them by complexity
                     (!parser.types || parser.types.contains(win.type)) &&
@@ -7168,6 +7223,7 @@ ui.Theme = new Class({
 
 ui.Window = new Class({
     Extends: Epitome.View,
+    Binds: ["sendInput"],
     options: {
         events: {
 
@@ -7285,7 +7341,7 @@ ui.QUI.Window = new Class({
     Binds: ['close'],
     options: {
         events: {
-            'click:relay(.input .send)': 'sendInput',
+            // 'click:relay(.input .send)': 'sendInput',
             'dblclick:relay(.input .nickname)': 'setNickname',
             'dblclick:relay(.topic)': 'editTopic',
 
@@ -7325,8 +7381,8 @@ ui.QUI.Window = new Class({
                 id: self.name.clean().replace(" ", "-"),
                 topic: false,
                 needsInput: hasInput,
-                nick: self.client ? self.client.nickname : "",
-                splitPane: false//feature in development having issue with resizes {{link to repo}}
+                nick: self.client ? self.client.nickname : ""/*,
+                splitPane: false//feature in development having issue with resizes {{link to repo}}*/
             }));
         var $win = self.window = self.element.getElement('.window').store("window", self);
 
@@ -7346,6 +7402,9 @@ ui.QUI.Window = new Class({
                 start: false
             });
             self.$input = $win.getElement('.input .irc-input');
+
+            $win.getElement('form')
+                .addEvent("submit", self.sendInput);
         }
         return self;
     },
@@ -7694,6 +7753,7 @@ ui.QUI.Window = new Class({
             nicks.push(nick);
 
             if(!old || old.prefix !== nickobj.prefix) {
+                if(old && old.element) old.element.dispose();//or update it jeez
                 lnh[nick] = self.nickListAdd(nickobj, index);
             }
         });
@@ -7818,24 +7878,11 @@ ui.OptionView = new Class({
         pane: 'options',
         events: {
             'change:relay(#options input)': 'inputChange',
-            'change:relay(#options #standard-notices input)': 'snoticeChange',
-            'change:relay(#options #custom-notices input)': 'noticeChange',
+            'change:relay(#options .notice-group input)': 'noticeChange',
             'click:relay(#options #add-notice)': 'addNotifier',
-            'click:relay(#options #custom-notices .remove-notice)': 'removeNotifier',
+            'click:relay(#options .remove-notice)': 'removeNotifier',
             'click:relay(#options #dn_state)': 'dnToggle',
             'click:relay(#options #notice-test)': 'noticeTest'
-        },
-
-        onSnoticeChange: function(e, target) {
-            e.stop();
-            var notices = _.clone(this.model.get('notices'));
-            _.assign(notices, target.get('id'), target.val());
-            this.model.set('notices', notices);
-        },
-
-        onAddNotifier: function(e) {
-            e.stop();
-            this.addNotifier();
         },
         
         onDnToggle: function(e, target) {
@@ -7863,33 +7910,37 @@ ui.OptionView = new Class({
 
     addNotifier: function(data) {
         if(!data || Type.isDOMEvent(data)) {
-            data = this.model.get("default_notice")();
+            data = this.model.defaultNotice();
             var n = _.clone(this.model.get("custom_notices"));
             n.push(data);
             this.model.set("custom_notices", n);
         }
 
-        var parent = this.element.getElement('#custom-notices');
+        var $addbtn = this.element.getElement('#add-notice'/*'#custom_notices .panel-body'*/);
 
         var _data = _.clone(data);
         _data.lang = lang;
 
         var temp = templates.customNotice(_data);
 
-        parent.insertAdjacentHTML('beforeend', temp);
+        $addbtn.insertAdjacentHTML('beforebegin', temp);//insert before btn
     },
 
     removeNotifier: function(e, target) {
         e.stop();
-        var par = target.getParent('.custom-notice').dispose();
-        this.model.set('custom_notices', (_.reject(this.model.get('custom_notices'), function(xs) {return xs.id === par.id})));
+        var type = target.getParent('.notice-group').id;
+        var par = target.getParent('.controls').dispose();
+        var id = par.get("data-id");
+        this.model.set('custom_notices', (_.reject(this.model.get(type), function(xs) {return xs.id === id})));
     },
 
     noticeChange: function(e, target) {
         e.stop();
-        var notices = _.clone(this.model.get('custom_notices'));
-        var par = target.getParent('.custom-notice');
-        _.findWhere(notices, {id: par.id})[target.get('data-id')] = target.val();
+        var type = target.getParent('.notice-group').id;
+        var notices = _.clone(this.model.get(type));
+        var par = target.getParent('.controls');
+        var notice = _.findWhere(notices, {id: par.get("data-id")});
+        notice[target.get('data-id')] = target.val();
         this.model.set('custom_notices', notices);
     },
     /*********LISTENERS**************/
@@ -7898,10 +7949,10 @@ ui.OptionView = new Class({
         var model = this.model,
             options = this.options;
 
-        _.each(model.get("custom_notices"), function(notice) {
-            notice.lang = lang;
-            this.addNotifier(notice);
-        }, this);
+        // _.each(model.get("custom_notices"), function(notice) {
+        //     notice.lang = lang;
+        //     this.addNotifier(notice);
+        // }, this);
 
         this.element.getElements(".slider").each(function(slider) {
             var id = slider.get('id'),
@@ -7932,7 +7983,7 @@ ui.OptionView = new Class({
 
     getData: function() {
         var data = this.model.toJSON();
-        data.lang = lang;
+        // data.lang = lang;
         return data;
     },
 

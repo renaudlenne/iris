@@ -638,7 +638,7 @@ MooTools.More = {
             return [ 31, Date.isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ][month];
         },
         isLeapYear: function(year) {
-            return 0 === year % 4 && 0 !== year % 100 || 0 === year % 400;
+            return year % 4 === 0 && year % 100 !== 0 || year % 400 === 0;
         },
         parse: function(from) {
             var t = typeOf(from);
@@ -2026,9 +2026,9 @@ var Slider = new Class({
             return [ Math.round(360 * hue), Math.round(100 * saturation), Math.round(100 * brightness) ];
         },
         hsbToRgb: function() {
-            var br = Math.round(255 * (this[2] / 100));
+            var br = Math.round(this[2] / 100 * 255);
             if (0 == this[1]) return [ br, br, br ];
-            var hue = this[0] % 360, f = hue % 60, p = Math.round(255 * (this[2] * (100 - this[1]) / 1e4)), q = Math.round(255 * (this[2] * (6e3 - this[1] * f) / 6e5)), t = Math.round(255 * (this[2] * (6e3 - this[1] * (60 - f)) / 6e5));
+            var hue = this[0] % 360, f = hue % 60, p = Math.round(this[2] * (100 - this[1]) / 1e4 * 255), q = Math.round(this[2] * (6e3 - this[1] * f) / 6e5 * 255), t = Math.round(this[2] * (6e3 - this[1] * (60 - f)) / 6e5 * 255);
             switch (Math.floor(hue / 60)) {
               case 0:
                 return [ br, t, p ];
@@ -2061,11 +2061,10 @@ var Slider = new Class({
         }
     });
 }(), function() {
-    var root = this, previousUnderscore = root._, ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype, getTime = Date.now, push = ArrayProto.push, slice = ArrayProto.slice, concat = ArrayProto.concat, toString = ObjProto.toString, hasOwnProperty = ObjProto.hasOwnProperty, nativeIndexOf = ArrayProto.indexOf, nativeLastIndexOf = ArrayProto.lastIndexOf;
-    FuncProto.bind;
-    var _ = function(obj) {
+    var root = this, previousUnderscore = root._, ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype, getTime = Date.now, push = ArrayProto.push, slice = ArrayProto.slice, concat = ArrayProto.concat, toString = ObjProto.toString, hasOwnProperty = ObjProto.hasOwnProperty, nativeIndexOf = ArrayProto.indexOf, nativeLastIndexOf = ArrayProto.lastIndexOf, _ = (FuncProto.bind, 
+    function(obj) {
         return obj instanceof _ ? obj : this instanceof _ ? (this._wrapped = obj, void 0) : new _(obj);
-    };
+    });
     "undefined" != typeof exports ? ("undefined" != typeof module && module.exports && (exports = module.exports = _), 
     exports._ = _) : root._ = _, _.VERSION = "1.5.1";
     var isEnumerable = _.isEnumerable = Type.isEnumerable, each = _.each = _.forEach = function(obj, iterator, context) {
@@ -2262,7 +2261,8 @@ var Slider = new Class({
         for (var length = Math.max(Math.ceil((stop - start) / step), 0), idx = 0, range = new Array(length); length > idx; ) range[idx++] = start, 
         start += step;
         return range;
-    }, _.bind = function(fn) {
+    };
+    _.bind = function(fn) {
         return fn.bind(slice.call(arguments, 1));
     }, _.partial = function(func) {
         var args = slice.call(arguments, 1);
@@ -2516,24 +2516,27 @@ var Slider = new Class({
         }
     });
 }.call(this), function(_, undefined) {
-    var ECMAspit = "ab".split(/a*/).length > 1 ? String.prototype.split : function(separator, limit) {
-        if ("undefined" != typeof limit) throw "ECMAsplit: limit is unimplemented";
-        var result = this.split.apply(this, arguments), re = RegExp(separator), savedIndex = re.lastIndex, match = re.exec(this);
-        return match && 0 == match.index && result.unshift(""), re.lastIndex = savedIndex, 
-        result;
-    }, stringLambda = function(str) {
-        var params = [], expr = str, sections = ECMAspit.call(expr, /\s*->\s*/m);
-        if (sections.length > 1) for (;sections.length; ) expr = sections.pop(), params = sections.pop().split(/\s*,\s*|\s+/m), 
-        sections.length && sections.push("(function(" + params + "){return (" + expr + ")})"); else if (expr.match(/\b_\b/)) params = "_"; else {
-            var leftSection = expr.match(/^\s*(?:[+*\/%&|\^\.=<>]|!=)/m), rightSection = expr.match(/[+\-*\/%&|\^\.=<>!]\s*$/m);
-            if (leftSection || rightSection) leftSection && (params.push("$1"), expr = "$1" + expr), 
-            rightSection && (params.push("$2"), expr += "$2"); else for (var v, regex = /(?:\b[A-Z]|\.[a-zA-Z_$])[a-zA-Z_$\d]*|[a-zA-Z_$][a-zA-Z_$\d]*\s*:|this|arguments|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, vars = str.replace(regex, "").match(/([a-z_$][a-z_$\d]*)/gi) || [], i = 0; v = vars[i++]; ) params.indexOf(v) >= 0 || params.push(v);
-        }
-        return new Function(params, "return (" + expr + ")");
-    }, stringToFunction = function(str) {
-        return str.match(/\breturn\b/) ? new Function(str) : stringLambda(str);
-    }, functional = _.func = {}, slice = Array.prototype.slice;
-    Array.prototype.concat, _.each([ "each", "map", "filter", "some", "every", "find", "sortBy", "groupBy", "invoke", "lookup" ], function(name) {
+    {
+        var ECMAspit = "ab".split(/a*/).length > 1 ? String.prototype.split : function(separator, limit) {
+            if ("undefined" != typeof limit) throw "ECMAsplit: limit is unimplemented";
+            var result = this.split.apply(this, arguments), re = RegExp(separator), savedIndex = re.lastIndex, match = re.exec(this);
+            return match && 0 == match.index && result.unshift(""), re.lastIndex = savedIndex, 
+            result;
+        }, stringLambda = function(str) {
+            var params = [], expr = str, sections = ECMAspit.call(expr, /\s*->\s*/m);
+            if (sections.length > 1) for (;sections.length; ) expr = sections.pop(), params = sections.pop().split(/\s*,\s*|\s+/m), 
+            sections.length && sections.push("(function(" + params + "){return (" + expr + ")})"); else if (expr.match(/\b_\b/)) params = "_"; else {
+                var leftSection = expr.match(/^\s*(?:[+*\/%&|\^\.=<>]|!=)/m), rightSection = expr.match(/[+\-*\/%&|\^\.=<>!]\s*$/m);
+                if (leftSection || rightSection) leftSection && (params.push("$1"), expr = "$1" + expr), 
+                rightSection && (params.push("$2"), expr += "$2"); else for (var v, regex = /(?:\b[A-Z]|\.[a-zA-Z_$])[a-zA-Z_$\d]*|[a-zA-Z_$][a-zA-Z_$\d]*\s*:|this|arguments|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, vars = str.replace(regex, "").match(/([a-z_$][a-z_$\d]*)/gi) || [], i = 0; v = vars[i++]; ) params.indexOf(v) >= 0 || params.push(v);
+            }
+            return new Function(params, "return (" + expr + ")");
+        }, stringToFunction = function(str) {
+            return str.match(/\breturn\b/) ? new Function(str) : stringLambda(str);
+        }, functional = _.func = {}, slice = Array.prototype.slice;
+        Array.prototype.concat;
+    }
+    _.each([ "each", "map", "filter", "some", "every", "find", "sortBy", "groupBy", "invoke", "lookup" ], function(name) {
         functional[name] = function(fn, list) {
             return _[name].apply(this, [ list, fn ].concat(slice.call(arguments, 2)));
         };
@@ -3006,9 +3009,9 @@ Element.Properties.mask = {
     var _keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=", _utf8_encode = function(string) {
         var c, n, utftext = "";
         for (string = string.replace(/\r\n/g, "\n"), n = 0; n < string.length; n++) c = string.charCodeAt(n), 
-        128 > c ? utftext += String.fromCharCode(c) : c > 127 && 2048 > c ? (utftext += String.fromCharCode(192 | c >> 6), 
-        utftext += String.fromCharCode(128 | 63 & c)) : (utftext += String.fromCharCode(224 | c >> 12), 
-        utftext += String.fromCharCode(128 | 63 & c >> 6), utftext += String.fromCharCode(128 | 63 & c));
+        128 > c ? utftext += String.fromCharCode(c) : c > 127 && 2048 > c ? (utftext += String.fromCharCode(c >> 6 | 192), 
+        utftext += String.fromCharCode(63 & c | 128)) : (utftext += String.fromCharCode(c >> 12 | 224), 
+        utftext += String.fromCharCode(c >> 6 & 63 | 128), utftext += String.fromCharCode(63 & c | 128));
         return utftext;
     }, _utf8_decode = function(utftext) {
         for (var string = "", i = 0, c = 0, c1 = 0, c2 = 0; i < utftext.length; ) c = utftext.charCodeAt(i), 
@@ -3739,7 +3742,8 @@ function(window) {
         initialize: function(options) {
             this.setOptions(options), this.API = new Class({
                 Extends: BehaviorAPI
-            }), this.passMethods({
+            });
+            this.passMethods({
                 getDelegator: this.getDelegator.bind(this),
                 addEvent: this.addEvent.bind(this),
                 removeEvent: this.removeEvent.bind(this),
@@ -5491,7 +5495,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
     var stack1, buffer = "", functionType = "function", escapeExpression = this.escapeExpression;
     return buffer += "<form class='input'><div class='tt-ahead input-group'><span class='input-group-addon user'><span class='status " + escapeExpression((stack1 = depth0.status, 
     typeof stack1 === functionType ? stack1.apply(depth0) : stack1)) + '\'></span><span class="nickname">' + escapeExpression((stack1 = depth0.nick, 
-    typeof stack1 === functionType ? stack1.apply(depth0) : stack1)) + "</span></span>" + "<input class='tt-hint hidden' type='text' autocomplete='off' spellcheck='off' disabled>" + "<input class='tt-query form-control irc-input decorated' type='text' autocomplete='off' spellcheck='off'><span class='input-group-btn'><button class='btn btn-default send' type='submit'>&gt;</button></span></div></form>";
+    typeof stack1 === functionType ? stack1.apply(depth0) : stack1)) + "</span></span><input class='tt-hint hidden' type='text' autocomplete='off' spellcheck='off' disabled><input class='tt-query form-control irc-input decorated' type='text' autocomplete='off' spellcheck='off'><span class='input-group-btn'><button class='btn btn-default send' type='submit'>&gt;</button></span></div></form>";
 }), this.qwebirc.templates.ircMessage = Handlebars.template(function(Handlebars, depth0, helpers, partials, data) {
     this.compilerInfo = [ 4, ">= 1.0.0" ], helpers = this.merge(helpers, Handlebars.helpers), 
     data = data || {};
@@ -6519,8 +6523,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
     }, util.removePrefix = function(nc, pref) {
         return nc.prefixes = nc.prefixes.replaceAll(pref, "");
     }, util.prefixOnNick = _.autoCurry(function(prefixes, nick) {
-        var c = nick.charAt(0);
-        return util.validPrefix(prefixes, c) ? [ c, nick.slice(1) ] : [ "", nick ];
+        for (var i = 0; i < nick.length && util.validPrefix(prefixes, nick.charAt(i)); i++) ;
+        return [ nick.slice(0, i), nick.slice(i) ];
     }), util.getPrefix = _.compose(_.first, util.prefixOnNick), util.stripPrefix = _.compose(_.lambda("x[1]"), util.prefixOnNick), 
     util.createWordRegex = function(word) {
         return new RegExp("\\b" + String.escapeRegExp(word) + "\\b", "i");
@@ -6565,7 +6569,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         var left = str.slice(0, pos + 1).search(notwhitespace), right = str.slice(pos).search(whitespace), word = 0 > right ? str.slice(left) : str.slice(left, right + pos);
         return [ left, word ];
     }, util.randHexString = function(numBytes) {
-        for (var id = ""; numBytes > 0; numBytes--) id += (0 | 256 * (1 + Math.random())).toString(16).slice(1);
+        for (var id = ""; numBytes > 0; numBytes--) id += (256 * (1 + Math.random()) | 0).toString(16).slice(1);
         return id;
     }, util.IRCTimestamp = function(date) {
         return date.format("[%H:%M]");
@@ -6774,7 +6778,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             offset: 20
         }, options);
         var filler = function() {
-            $ele.getSize(), Array.from(options.style).each(function(style) {
+            $ele.getSize();
+            Array.from(options.style).each(function(style) {
                 var method = style.contains("width") ? "x" : "y", offset = options.offset;
                 $ele.getSiblings().each(function(sib) {
                     offset += sib.getSize()[method];
@@ -6797,8 +6802,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         par = par || $(document.body);
         var size = par.getSize();
         return {
-            x: size.x * .01 * data.x,
-            y: size.y * .01 * data.y
+            x: .01 * size.x * data.x,
+            y: .01 * size.y * data.y
         };
     }, util.calc = function($ele, style, val) {
         if (!Browser.Features.calc) {
@@ -7883,8 +7888,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 this.send(format(cmd.JOIN, {
                     channel: util.formatChannelString(this.channels)
                 }));
-                var channels;
-                this.options, this.writeMessages(lang.signOn), this.writeMessages(lang.loginMessages, {}, {
+                {
+                    var channels;
+                    this.options;
+                }
+                this.writeMessages(lang.signOn), this.writeMessages(lang.loginMessages, {}, {
                     channel: BROUHAHA
                 }), !this.authed && auth.enabled ? (this.exec(util.format("/AUTH {username} {password}", this.options)), 
                 this.writeMessages.delay(100, this, lang.joinAfterAuth), this.activeTimers.autojoin = function() {
@@ -7973,9 +7981,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                     n: nick,
                     channel: ACTIVE,
                     msgs: []
-                };
-                type.toUpperCase();
-                var msgs = ndata.msgs;
+                }, msgs = (type.toUpperCase(), ndata.msgs);
                 switch (type.toLowerCase()) {
                   case "user":
                     msgs.push({
@@ -8296,15 +8302,21 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 });
             },
             irc_RPL_WHOISSERVER: function(data) {
-                var nick = data.args[1];
-                return data.args[2], _.last(data.args), this._whois(nick, "server", {
+                {
+                    var nick = data.args[1];
+                    data.args[2], _.last(data.args);
+                }
+                return this._whois(nick, "server", {
                     server: data.args[2],
                     serverdesc: _.last(data.args)
                 });
             },
             irc_RPL_WHOISOPERATOR: function(data) {
-                var nick = data.args[1];
-                return _.last(data.args), this._whois(nick, "oper", {
+                {
+                    var nick = data.args[1];
+                    _.last(data.args);
+                }
+                return this._whois(nick, "oper", {
                     opertext: _.last(data.args)
                 });
             },
@@ -8335,8 +8347,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 });
             },
             irc_RPL_WHOISOPERNAME: function(data) {
-                var nick = data.args[1];
-                return data.args[2], this._whois(nick, "opername", {
+                {
+                    var nick = data.args[1];
+                    data.args[2];
+                }
+                return this._whois(nick, "opername", {
                     opername: data.args[2]
                 });
             },
@@ -8359,8 +8374,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 });
             },
             irc_RPL_ENDOFWHOIS: function(data) {
-                var nick = data.args[1];
-                return _.last(data.args), delete this._whoisNick, this._whois(nick, "end", {});
+                {
+                    var nick = data.args[1];
+                    _.last(data.args);
+                }
+                return delete this._whoisNick, this._whois(nick, "end", {});
             },
             irc_RPL_AWAY: function(data) {
                 var nick = data.args[1], message = _.last(data.args);
@@ -9118,8 +9136,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                     });
                 }
             }
-            var self = this;
-            return self.options.routerPrefix, self.nav = new ui.NavBar({
+            {
+                var self = this;
+                self.options.routerPrefix;
+            }
+            return self.nav = new ui.NavBar({
                 element: self.outerTabs,
                 menuElement: self.element
             }), self.nav.on({
@@ -9356,7 +9377,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                         inputKeyboard.activate();
                     },
                     keydown: function(e) {
-                        keyboard.isActive() && (e.alt && !isNaN(e.key) && e.key <= self.windowArray.length ? self.selectWindow(e.key - 1) : !self.active.$input || e.alt || e.control || e.meta || !isChar(e.code) || self.active.$input.focus());
+                        keyboard.isActive() && (e.alt && !isNaN(e.key) && e.key <= self.windowArray.length ? self.selectWindow(e.key - 1) : self.active.$input && !(e.alt || e.control || e.meta) && isChar(e.code) && self.active.$input.focus());
                     }
                 });
             }
@@ -9724,9 +9745,9 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         },
         addLine: function(type, data, colour, $ele) {
             var self = this, parent = self.parentObject, highlight = this.name !== BROUHAHA ? parent.theme.highlightAndNotice(data, type, self, $ele) : ui.HIGHLIGHT.none, hl_line = !1;
-            self.active || highlight === ui.HIGHLIGHT.none || self.highlightTab(highlight), 
-            parent.theme.formatMessage($ele, type, data, hl_line), self.lines.adopt($ele).maxChildren(this.options.maxLines), 
-            self.getOption("lastpos_line") && type.endsWith("CHANMSG") && (this.lastLine = (this.lastLine || Element.from(templates.messageLine())).inject(this.lines));
+            self.active || highlight === ui.HIGHLIGHT.none || self.highlightTab(highlight);
+            parent.theme.formatMessage($ele, type, data, hl_line);
+            self.lines.adopt($ele).maxChildren(this.options.maxLines), self.getOption("lastpos_line") && type.endsWith("CHANMSG") && (this.lastLine = (this.lastLine || Element.from(templates.messageLine())).inject(this.lines));
         },
         errorMessage: function(message) {
             this.addLine("", message, "warn");
@@ -9838,8 +9859,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             this.parent());
         },
         _selectUpdates: function() {
-            var self = this;
-            if (self.parentObject, self.fxscroll && self.fxscroll.start(), self.completer || self.type !== ui.WINDOW.channel || (self.completer = new Completer(self.window.getElement(".input .tt-ahead"), self.history.get(self.name), {
+            {
+                var self = this;
+                self.parentObject;
+            }
+            if (self.fxscroll && self.fxscroll.start(), self.completer || self.type !== ui.WINDOW.channel || (self.completer = new Completer(self.window.getElement(".input .tt-ahead"), self.history.get(self.name), {
                 autocomplete: self.getOption("completer").intrusive
             }), self.completer.$hint.addClass("decorated"), self.$input.removeClass("decorated")), 
             util.isChannelType(self.type)) {
@@ -9926,12 +9950,14 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             $menu.addClass("dropdownmenu").setPosition(evt.client);
         },
         nickListMenu: function(evt, $tar) {
-            var $par = $tar.getParent(".user").toggleClass("selected");
-            this.createNickMenu($par.get("data-user"), $par, {
-                close: function() {
-                    $par.removeClass("selected");
-                }
-            });
+            {
+                var $par = $tar.getParent(".user").toggleClass("selected");
+                this.createNickMenu($par.get("data-user"), $par, {
+                    close: function() {
+                        $par.removeClass("selected");
+                    }
+                });
+            }
         },
         menuClick: function(e, $tar) {
             var action = $tar.get("data-exec");

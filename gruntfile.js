@@ -31,7 +31,8 @@ module.exports = function(grunt) {
                             '$css': true,
                             'enableDisable': true,
                             '$link': true,
-                            'format': true
+                            'format': true,
+                            'lang': true
                         },//,
                         knownHelpersOnly: true,
                     },
@@ -87,25 +88,16 @@ module.exports = function(grunt) {
         copy: {
 
             demo: {
-                files: [{
+                files: [
+                {
                     expand: true,
                     src: ['js/dist/qwebirc-0.93dev.js', 'js/modules/**', 'js/panes/**', 'js/templates/**'],
-                    dest: 'demo/node/static/'
+                    dest: 'static/'
                 },
                 {
                     expand: true,
                     src: ['css/*.css'],
-                    dest: 'demo/node/static/'
-                },
-                {
-                    expand: true,
-                    src: ['js/dist/qwebirc-0.93dev.js', 'js/modules/**', 'js/panes/**', 'js/templates/**'],
-                    dest: 'demo/twisted/static/'
-                },
-                {
-                    expand: true,
-                    src: ['css/*.css'],
-                    dest: 'demo/twisted/static/'
+                    dest: 'static/'
                 }]
             }
         },

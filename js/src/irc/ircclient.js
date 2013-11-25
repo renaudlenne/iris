@@ -1,7 +1,7 @@
 // //ircclient with added event support
 irc.IRCClient = new Class({
     Implements: [Options, Events, irc.Commands],
-    Binds: ["lostConnection", "send", "quit", "connected","retry", "_ndispatch", "_tdispatch"],
+    Binds: ["lostConnection", "send", "quit", "connected",  "retry", "_ndispatch", "_tdispatch"],
     options: {
         minRejoinTime: [0],
         networkServices: [],
@@ -61,7 +61,8 @@ irc.IRCClient = new Class({
 
     //connection methods
     connect: function() {
-        return this.connection.connect();
+        this.connection.connect();
+        return this;
     },
 
     connected: function() {
@@ -97,9 +98,13 @@ irc.IRCClient = new Class({
         return this;
     },
 
-    lostConnection: function() {
-        console.log("todo");
+    lostConnection: function(attempt) {
         console.log(arguments);
+        this.writeMessages(lang.connRetry, {
+            retryAttempts: attempt
+        }, {
+            channels: "ALL"
+        });
     },
 
     retry: function(data) {
@@ -315,6 +320,13 @@ irc.IRCClient = new Class({
     *       private server event handlers             *
     **************************************************/
     _signOn: function(/*data*/) {
+        if(this.__signedOn) {//server/client crashed reconnect
+            console.log("REjoining " + util.formatChannelString(this.channels));
+            return this.send(format(cmd.JOIN, {
+                channel: util.formatChannelString(this.channels)
+            }));
+        }
+
         var options = this.options,
             channels;
 

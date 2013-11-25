@@ -9,7 +9,6 @@ ui.Interface = new Class({
         networkName: "" /* Quake Net */,
         networkServices: [],//registered hosts to treat as a server admin
 
-        initialNickname: "",
         minRejoinTime: [5, 20, 300], //array - secs between consecutive joins to a single channel - see js/src/irc/ircclient@canjoinchan
 
         validators: {//test is a helper from ircutils
@@ -47,17 +46,23 @@ ui.Interface = new Class({
 
     //Note removed option args to configure router. May support it later.
     initialize: function(element, UI, options) {
-        this.setOptions(options);
-        var self = this,
-            opts = self.options;
+        options = this.setOptions(options).options;
+        var self = this;
+        var settings = self.options.settings = new config.Settings(options.settings);
+        
+        //parse query string
+        var query = window.location.search;
+        if(query) {
+            var parsed = query.slice(1).parseQueryString();
+            if(parsed.channels) settings.set("channels", concatUnique(settings.get("channels"), util.unformatChannelString(parsed.channels)));
+        }
 
         window.addEvent("domready", function() {
-            var settings = self.options.settings = new config.Settings(opts.settings);
             self.element = $(element);
 
-            self.ui = new UI(self.element, new ui.Theme(opts.theme), opts); //unconventional naming scheme
+            self.ui = new UI(self.element, new ui.Theme(options.theme), options); //unconventional naming scheme
 
-            if(opts.node) { Asset.javascript(opts.socketio); }
+            if(options.node) { Asset.javascript(options.socketio); }
             //cleans up old properties
             if(settings.get("newb")) {
                 self.welcome();
@@ -66,7 +71,7 @@ ui.Interface = new Class({
             self.ui.loginBox();
 
             self.ui.addEvent("login:once", function(loginopts) {
-                var ircopts = _.extend(Object.subset(opts, ['settings', 'specialUserActions', 'minRejoinTime', 'networkServices', 'loginRegex', 'node']),
+                var ircopts = _.extend(Object.subset(options, ['settings', 'specialUserActions', 'minRejoinTime', 'networkServices', 'loginRegex', 'node']),
                                         loginopts);
 
                 var client = self.IRCClient = new irc.IRCClient(ircopts/*, self.ui*/);
@@ -80,21 +85,16 @@ ui.Interface = new Class({
                     }, true);
                 });
 
-                window.onbeforeunload = function(e) {
-                    if (client.isConnected()) {//ie has gotten passed the IRC gate
-                        var message = "This action will close all active IRC connections.";
-                        if ((e = e || window.event)) {
-                            e.returnValue = message;
+                window.addEvents({
+                    "beforeunload": function(e) {
+                        if (client.isConnected()) {//ie has gotten passed the IRC gate
+                            var message = "This action will close all active IRC connections.";
+                            (e || window.event).returnValue = message;//legacy ie
+                            return message;
                         }
-                        return message;
-                    }
-                };
-                window.addEvent('unload', client.quit);
-                window.onunload = client.quit;
-
-                if(!auth.enabled) {
-                    self.ui.beep();
-                }
+                    },
+                    "unload": client.quit
+                });
 
                 self.fireEvent("login", {
                     'IRCClient': client,
@@ -107,17 +107,6 @@ ui.Interface = new Class({
         ui.WelcomePane.show(this.ui, _.extend({
             element: this.element,
             firstvisit: true
-        }, this.options));
-
-        var settings = this.options.settings;
-        storage.remove("qweb-new");
-        ['account', 'password', 'nickname', 'channels'].each(function(key) {
-            var skey = "qweb-" + key;
-            var val = storage.get(skey);
-            if(val) {
-                settings.set(key, val);
-            }
-            storage.remove(skey);
-        });
+        }, this.options)); 
     }
 });

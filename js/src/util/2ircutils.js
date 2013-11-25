@@ -11,9 +11,9 @@ var join = function(by, xs) {
         return str.split(by);
     },
 
-    restRight = _.autoCurry(function(xs) {
-        return xs.slice(0, xs.length - 1);
-    }),
+    // restRight = function(xs) {
+    //     return xs.slice(0, xs.length - 1);
+    // },
 
     test = _.autoCurry(function(reg, str) {
         return str.test(reg);
@@ -111,7 +111,7 @@ util.windowNeedsInput = _.partial(_.contains, INPUT_TYPES);
 //String -> String
 //formatChannelStrings("test,test2,#test3,#tes#t4,test5,test6") => "#test,#test2,#test3,#tes#t4,#test5,#test6"
 util.formatChannelString = _.compose(joinComma, _.uniq, _.partial(_.func.map, formatChannel), splitChan);
-util.unformatChannelString = _.compose(_.uniq, _.partial(_.func.map, unformatChannel), splitChan);
+util.unformatChannelString = _.compose(_.uniq, _.partial(_.func.map, formatChannel), splitChan);
 
 util.formatURL = function(link) {
     link = util.isChannel(link) ? link.replace("#", "@") : link;
@@ -264,11 +264,12 @@ util.removePrefix = function(nc, pref) {
     return nc.prefixes = nc.prefixes.replaceAll(pref, "");
 };
 
-//if theres a prefix it gets returned
-//i dont think its possible to have multiple prefixes
+//get prefixs on a nick
 util.prefixOnNick = _.autoCurry(function(prefixes, nick) {
-    var c = nick.charAt(0);
-    return util.validPrefix(prefixes, c) ? [c, nick.slice(1)] : ['', nick];
+    for (var i = 0; i < nick.length; i++) {
+        if(!util.validPrefix(prefixes, nick.charAt(i))) break;
+    }
+    return [nick.slice(0, i), nick.slice(i)];
 });
 
 util.getPrefix = _.compose(_.first, util.prefixOnNick);
@@ -366,16 +367,13 @@ util.getEnclosedWord = function(str, pos) {
 };
 
 // NOT cryptographically secure! 
+//http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
 util.randHexString = function(numBytes) {
-    function getByte() {
-        return (((1 + Math.random()) * 0x100) | 0).toString(16).substring(1);
-    };
-
-    var l = [];
-    for (var i = 0; i < numBytes; i++) {
-        l.push(getByte());
+    var id = "";
+    for (; numBytes > 0; numBytes--) {
+        id += (((1 + Math.random()) * 0x100) | 0).toString(16).slice(1);
     }
-    return l.join("");
+    return id;
 };
 
 

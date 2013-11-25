@@ -1,6 +1,6 @@
 /*!
 qwebirc-WebIRC-client ::: Version 0.93.11 :::
-Built on 2013-10-29
+Built on 2013-11-25
 Description: webirc client - See qwebirc.org
 Authors: Graeme Yeates (www.github.com/megawac)
 Repository: www.github.com/megawac/qwebirc-enhancements
@@ -638,7 +638,7 @@ MooTools.More = {
             return [ 31, Date.isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ][month];
         },
         isLeapYear: function(year) {
-            return 0 === year % 4 && 0 !== year % 100 || 0 === year % 400;
+            return year % 4 === 0 && year % 100 !== 0 || year % 400 === 0;
         },
         parse: function(from) {
             var t = typeOf(from);
@@ -2026,9 +2026,9 @@ var Slider = new Class({
             return [ Math.round(360 * hue), Math.round(100 * saturation), Math.round(100 * brightness) ];
         },
         hsbToRgb: function() {
-            var br = Math.round(255 * (this[2] / 100));
+            var br = Math.round(this[2] / 100 * 255);
             if (0 == this[1]) return [ br, br, br ];
-            var hue = this[0] % 360, f = hue % 60, p = Math.round(255 * (this[2] * (100 - this[1]) / 1e4)), q = Math.round(255 * (this[2] * (6e3 - this[1] * f) / 6e5)), t = Math.round(255 * (this[2] * (6e3 - this[1] * (60 - f)) / 6e5));
+            var hue = this[0] % 360, f = hue % 60, p = Math.round(this[2] * (100 - this[1]) / 1e4 * 255), q = Math.round(this[2] * (6e3 - this[1] * f) / 6e5 * 255), t = Math.round(this[2] * (6e3 - this[1] * (60 - f)) / 6e5 * 255);
             switch (Math.floor(hue / 60)) {
               case 0:
                 return [ br, t, p ];
@@ -2061,11 +2061,10 @@ var Slider = new Class({
         }
     });
 }(), function() {
-    var root = this, previousUnderscore = root._, ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype, getTime = Date.now, push = ArrayProto.push, slice = ArrayProto.slice, concat = ArrayProto.concat, toString = ObjProto.toString, hasOwnProperty = ObjProto.hasOwnProperty, nativeIndexOf = ArrayProto.indexOf, nativeLastIndexOf = ArrayProto.lastIndexOf;
-    FuncProto.bind;
-    var _ = function(obj) {
+    var root = this, previousUnderscore = root._, ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype, getTime = Date.now, push = ArrayProto.push, slice = ArrayProto.slice, concat = ArrayProto.concat, toString = ObjProto.toString, hasOwnProperty = ObjProto.hasOwnProperty, nativeIndexOf = ArrayProto.indexOf, nativeLastIndexOf = ArrayProto.lastIndexOf, _ = (FuncProto.bind, 
+    function(obj) {
         return obj instanceof _ ? obj : this instanceof _ ? (this._wrapped = obj, void 0) : new _(obj);
-    };
+    });
     "undefined" != typeof exports ? ("undefined" != typeof module && module.exports && (exports = module.exports = _), 
     exports._ = _) : root._ = _, _.VERSION = "1.5.1";
     var isEnumerable = _.isEnumerable = Type.isEnumerable, each = _.each = _.forEach = function(obj, iterator, context) {
@@ -2262,7 +2261,8 @@ var Slider = new Class({
         for (var length = Math.max(Math.ceil((stop - start) / step), 0), idx = 0, range = new Array(length); length > idx; ) range[idx++] = start, 
         start += step;
         return range;
-    }, _.bind = function(fn) {
+    };
+    _.bind = function(fn) {
         return fn.bind(slice.call(arguments, 1));
     }, _.partial = function(func) {
         var args = slice.call(arguments, 1);
@@ -2516,23 +2516,26 @@ var Slider = new Class({
         }
     });
 }.call(this), function(_, undefined) {
-    var ECMAspit = "ab".split(/a*/).length > 1 ? String.prototype.split : function(separator, limit) {
-        if ("undefined" != typeof limit) throw "ECMAsplit: limit is unimplemented";
-        var result = this.split.apply(this, arguments), re = RegExp(separator), savedIndex = re.lastIndex, match = re.exec(this);
-        return match && 0 == match.index && result.unshift(""), re.lastIndex = savedIndex, 
-        result;
-    }, stringLambda = function(str) {
-        var params = [], expr = str, sections = ECMAspit.call(expr, /\s*->\s*/m);
-        if (sections.length > 1) for (;sections.length; ) expr = sections.pop(), params = sections.pop().split(/\s*,\s*|\s+/m), 
-        sections.length && sections.push("(function(" + params + "){return (" + expr + ")})"); else if (expr.match(/\b_\b/)) params = "_"; else {
-            var leftSection = expr.match(/^\s*(?:[+*\/%&|\^\.=<>]|!=)/m), rightSection = expr.match(/[+\-*\/%&|\^\.=<>!]\s*$/m);
-            if (leftSection || rightSection) leftSection && (params.push("$1"), expr = "$1" + expr), 
-            rightSection && (params.push("$2"), expr += "$2"); else for (var v, regex = /(?:\b[A-Z]|\.[a-zA-Z_$])[a-zA-Z_$\d]*|[a-zA-Z_$][a-zA-Z_$\d]*\s*:|this|arguments|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, vars = str.replace(regex, "").match(/([a-z_$][a-z_$\d]*)/gi) || [], i = 0; v = vars[i++]; ) params.indexOf(v) >= 0 || params.push(v);
-        }
-        return new Function(params, "return (" + expr + ")");
-    }, stringToFunction = function(str) {
-        return str.match(/\breturn\b/) ? new Function(str) : stringLambda(str);
-    }, functional = _.func = {}, slice = Array.prototype.slice, concat = Array.prototype.concat;
+    {
+        var ECMAspit = "ab".split(/a*/).length > 1 ? String.prototype.split : function(separator, limit) {
+            if ("undefined" != typeof limit) throw "ECMAsplit: limit is unimplemented";
+            var result = this.split.apply(this, arguments), re = RegExp(separator), savedIndex = re.lastIndex, match = re.exec(this);
+            return match && 0 == match.index && result.unshift(""), re.lastIndex = savedIndex, 
+            result;
+        }, stringLambda = function(str) {
+            var params = [], expr = str, sections = ECMAspit.call(expr, /\s*->\s*/m);
+            if (sections.length > 1) for (;sections.length; ) expr = sections.pop(), params = sections.pop().split(/\s*,\s*|\s+/m), 
+            sections.length && sections.push("(function(" + params + "){return (" + expr + ")})"); else if (expr.match(/\b_\b/)) params = "_"; else {
+                var leftSection = expr.match(/^\s*(?:[+*\/%&|\^\.=<>]|!=)/m), rightSection = expr.match(/[+\-*\/%&|\^\.=<>!]\s*$/m);
+                if (leftSection || rightSection) leftSection && (params.push("$1"), expr = "$1" + expr), 
+                rightSection && (params.push("$2"), expr += "$2"); else for (var v, regex = /(?:\b[A-Z]|\.[a-zA-Z_$])[a-zA-Z_$\d]*|[a-zA-Z_$][a-zA-Z_$\d]*\s*:|this|arguments|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, vars = str.replace(regex, "").match(/([a-z_$][a-z_$\d]*)/gi) || [], i = 0; v = vars[i++]; ) params.indexOf(v) >= 0 || params.push(v);
+            }
+            return new Function(params, "return (" + expr + ")");
+        }, stringToFunction = function(str) {
+            return str.match(/\breturn\b/) ? new Function(str) : stringLambda(str);
+        }, functional = _.func = {}, slice = Array.prototype.slice;
+        Array.prototype.concat;
+    }
     _.each([ "each", "map", "filter", "some", "every", "find", "sortBy", "groupBy", "invoke", "lookup" ], function(name) {
         functional[name] = function(fn, list) {
             return _[name].apply(this, [ list, fn ].concat(slice.call(arguments, 2)));
@@ -2541,7 +2544,7 @@ var Slider = new Class({
         autoCurry: function(fn, numArgs) {
             return numArgs = numArgs || fn.length, function wrapper(prev_args) {
                 return function() {
-                    var args = concat.call(prev_args, slice.call(arguments));
+                    var args = prev_args.concat(slice.call(arguments));
                     return args.length < numArgs ? wrapper(args) : fn.apply(this, args);
                 };
             }([]);
@@ -2591,6 +2594,11 @@ var Slider = new Class({
         toFunction: Function.from,
         arrayarize: Array.from,
         toInt: Number.toInt,
+        clean: function(xs) {
+            return _.reject(xs, function(val) {
+                return null == val;
+            });
+        },
         log: function() {
             console.log(arguments);
         },
@@ -3001,9 +3009,9 @@ Element.Properties.mask = {
     var _keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=", _utf8_encode = function(string) {
         var c, n, utftext = "";
         for (string = string.replace(/\r\n/g, "\n"), n = 0; n < string.length; n++) c = string.charCodeAt(n), 
-        128 > c ? utftext += String.fromCharCode(c) : c > 127 && 2048 > c ? (utftext += String.fromCharCode(192 | c >> 6), 
-        utftext += String.fromCharCode(128 | 63 & c)) : (utftext += String.fromCharCode(224 | c >> 12), 
-        utftext += String.fromCharCode(128 | 63 & c >> 6), utftext += String.fromCharCode(128 | 63 & c));
+        128 > c ? utftext += String.fromCharCode(c) : c > 127 && 2048 > c ? (utftext += String.fromCharCode(c >> 6 | 192), 
+        utftext += String.fromCharCode(63 & c | 128)) : (utftext += String.fromCharCode(c >> 12 | 224), 
+        utftext += String.fromCharCode(c >> 6 & 63 | 128), utftext += String.fromCharCode(63 & c | 128));
         return utftext;
     }, _utf8_decode = function(utftext) {
         for (var string = "", i = 0, c = 0, c1 = 0, c2 = 0; i < utftext.length; ) c = utftext.charCodeAt(i), 
@@ -3442,7 +3450,7 @@ function(window) {
         wrapping_punctuation: [ [ "(", ")" ], [ "<", ">" ], [ "&lt;", "&gt;" ], [ "“", "”" ], [ "‘", "’" ], [ "'", "'" ], [ "[", "]" ] ],
         initialize: function(opts) {
             this.setOptions(opts), this.options.default_parser && this.patterns.push({
-                pattern: /[a-z0-9]\.[a-z]{2,4}/i,
+                pattern: /[a-z0-9]{2,}\.[a-z]{2,4}/i,
                 entireStr: !1,
                 parse: function(text) {
                     var options = this.options, word = text;
@@ -3734,7 +3742,8 @@ function(window) {
         initialize: function(options) {
             this.setOptions(options), this.API = new Class({
                 Extends: BehaviorAPI
-            }), this.passMethods({
+            });
+            this.passMethods({
                 getDelegator: this.getDelegator.bind(this),
                 addEvent: this.addEvent.bind(this),
                 removeEvent: this.removeEvent.bind(this),
@@ -4746,7 +4755,8 @@ var Asset = {
         properties || (properties = {});
         var script = new Element("script", {
             src: source,
-            type: "text/javascript"
+            type: "text/javascript",
+            async: !0
         }), doc = properties.document || document, load = properties.onload || properties.onLoad;
         return delete properties.onload, delete properties.onLoad, delete properties.document, 
         load && (script.addEventListener ? script.addEvent("load", load) : script.addEvent("readystatechange", function() {
@@ -5483,9 +5493,9 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
     this.compilerInfo = [ 4, ">= 1.0.0" ], helpers = this.merge(helpers, Handlebars.helpers), 
     data = data || {};
     var stack1, buffer = "", functionType = "function", escapeExpression = this.escapeExpression;
-    return buffer += "<div class='input'><div class='tt-ahead input-group'><span class='input-group-addon user'><span class='status " + escapeExpression((stack1 = depth0.status, 
+    return buffer += "<form class='input'><div class='tt-ahead input-group'><span class='input-group-addon user'><span class='status " + escapeExpression((stack1 = depth0.status, 
     typeof stack1 === functionType ? stack1.apply(depth0) : stack1)) + '\'></span><span class="nickname">' + escapeExpression((stack1 = depth0.nick, 
-    typeof stack1 === functionType ? stack1.apply(depth0) : stack1)) + "</span></span><input class='tt-hint hidden' type='text' autocomplete='off' spellcheck='off' disabled><input class='tt-query form-control irc-input decorated' type='text' autocomplete='off' spellcheck='off'><span class='input-group-btn'><button class='btn btn-default send' type='button'>&gt;</button></span></div></div>";
+    typeof stack1 === functionType ? stack1.apply(depth0) : stack1)) + "</span></span><input class='tt-hint hidden' type='text' autocomplete='off' spellcheck='off' disabled><input class='tt-query form-control irc-input decorated' type='text' autocomplete='off' spellcheck='off'><span class='input-group-btn'><button class='btn btn-default send' type='submit'>&gt;</button></span></div></form>";
 }), this.qwebirc.templates.ircMessage = Handlebars.template(function(Handlebars, depth0, helpers, partials, data) {
     this.compilerInfo = [ 4, ">= 1.0.0" ], helpers = this.merge(helpers, Handlebars.helpers), 
     data = data || {};
@@ -6432,9 +6442,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         return xs.join(by);
     }, split = function(by, str) {
         return str.split(by);
-    }, restRight = _.autoCurry(function(xs) {
-        return xs.slice(0, xs.length - 1);
-    }), test = _.autoCurry(function(reg, str) {
+    }, test = _.autoCurry(function(reg, str) {
         return str.test(reg);
     }), replace = _.autoCurry(function(reg, rep, str) {
         return str.replace(reg, rep);
@@ -6461,7 +6469,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         return _.isArray(xs) ? xs.length > 0 ? xs : [ "" ] : xs.split(",");
     }, isBaseWindow = util.isBaseWindow = _.partial(_.contains, BASE_WINDOWS), isChannelType = util.isChannelType = _.partial(_.contains, CHANNEL_TYPES);
     util.windowNeedsInput = _.partial(_.contains, INPUT_TYPES), util.formatChannelString = _.compose(joinComma, _.uniq, _.partial(_.func.map, formatChannel), splitChan), 
-    util.unformatChannelString = _.compose(_.uniq, _.partial(_.func.map, unformatChannel), splitChan), 
+    util.unformatChannelString = _.compose(_.uniq, _.partial(_.func.map, formatChannel), splitChan), 
     util.formatURL = function(link) {
         return link = util.isChannel(link) ? link.replace("#", "@") : link, "#!" + link;
     }, util.unformatURL = function(link) {
@@ -6515,8 +6523,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
     }, util.removePrefix = function(nc, pref) {
         return nc.prefixes = nc.prefixes.replaceAll(pref, "");
     }, util.prefixOnNick = _.autoCurry(function(prefixes, nick) {
-        var c = nick.charAt(0);
-        return util.validPrefix(prefixes, c) ? [ c, nick.slice(1) ] : [ "", nick ];
+        for (var i = 0; i < nick.length && util.validPrefix(prefixes, nick.charAt(i)); i++) ;
+        return [ nick.slice(0, i), nick.slice(i) ];
     }), util.getPrefix = _.compose(_.first, util.prefixOnNick), util.stripPrefix = _.compose(_.lambda("x[1]"), util.prefixOnNick), 
     util.createWordRegex = function(word) {
         return new RegExp("\\b" + String.escapeRegExp(word) + "\\b", "i");
@@ -6561,11 +6569,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         var left = str.slice(0, pos + 1).search(notwhitespace), right = str.slice(pos).search(whitespace), word = 0 > right ? str.slice(left) : str.slice(left, right + pos);
         return [ left, word ];
     }, util.randHexString = function(numBytes) {
-        function getByte() {
-            return (0 | 256 * (1 + Math.random())).toString(16).substring(1);
-        }
-        for (var l = [], i = 0; numBytes > i; i++) l.push(getByte());
-        return l.join("");
+        for (var id = ""; numBytes > 0; numBytes--) id += (256 * (1 + Math.random()) | 0).toString(16).slice(1);
+        return id;
     }, util.IRCTimestamp = function(date) {
         return date.format("[%H:%M]");
     }, util.IRCDate = function(date) {
@@ -6642,24 +6647,29 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             SHOW_NICKLIST: "Show nickname list in channels",
             SHOW_TIMESTAMPS: "Show timestamps",
             FONT_SIZE: "Set font size",
-            NOTIFY_ON_MENTION: "When nick mentioned:",
-            NOTIFY_ON_PM: "When private messaged:",
-            NOTIFY_ON_NOTICE: "When channel notice:",
+            VOLUME: "Volume",
             AUTO_OPEN_PM: "Automatically select window on private message:",
             FLASH: "flash",
             BEEP: "beep",
             PM: "pm",
+            MENTION: "mentioned",
             MESSAGE_PLACEHOLDER: " something ... ",
             NICK_PLACEHOLDER: " someone ... ",
+            TYPE_PLACEHOLDER: "type test",
             DELETE_NOTICE: "remove",
             ADD_NOTICE: "Add notifier",
             USER_NOTICE: "User:",
+            TYPE_NOTICE: "Type:",
             MESSAGE_NOTICE: "Message:",
             AUTOESCAPE: "Escape text",
-            HIGHLIGHT: "Highlight",
             MENTIONED: "Mentioned",
             ESCAPE_HINT: "This text is transformed into a regular expressions - autoescaping will check for the exact text you entered",
             DESKTOP_NOTICES: "Allow us to send desktop notifications if supported (on any notice with flash):",
+            IGNORE_CASE: "Case insensitive",
+            NOTUS: "Not us",
+            NOTUS_HINT: "Not our message",
+            HIGHLIGHT: "hl",
+            HIGHLIGHT_HINT: "highlight",
             ENABLE: "Enable",
             DISABLE: "Disable"
         });
@@ -6714,7 +6724,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             });
         }
     };
-    return util.loadTemplate = function(name) {
+    util.loadTemplate = function(name) {
         var template;
         return getTemplate(name, function(tmpl) {
             template = tmpl;
@@ -6768,7 +6778,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             offset: 20
         }, options);
         var filler = function() {
-            $ele.getSize(), Array.from(options.style).each(function(style) {
+            $ele.getSize();
+            Array.from(options.style).each(function(style) {
                 var method = style.contains("width") ? "x" : "y", offset = options.offset;
                 $ele.getSiblings().each(function(sib) {
                     offset += sib.getSize()[method];
@@ -6791,8 +6802,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         par = par || $(document.body);
         var size = par.getSize();
         return {
-            x: size.x * .01 * data.x,
-            y: size.y * .01 * data.y
+            x: .01 * size.x * data.x,
+            y: .01 * size.y * data.y
         };
     }, util.calc = function($ele, style, val) {
         if (!Browser.Features.calc) {
@@ -6905,6 +6916,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             return "comp" === type ? this[prop] ? def : default2 : this[prop] || def;
         }), engine.registerHelper("format", function(prop) {
             return util.format(prop, this);
+        }), engine.registerHelper("lang", function(prop) {
+            return lang[prop];
         }), compileAll(source, compiled), engine.partials = compiled;
     }(Handlebars), config.IRC_COMMANDS = {
         ACTION: {
@@ -6984,43 +6997,79 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 style_hue: 210,
                 style_saturation: 0,
                 style_brightness: 0,
-                notices: {
-                    on_mention: {
-                        flash: !0,
-                        beep: !0,
-                        pm: !1
-                    },
-                    on_pm: {
-                        flash: !0,
-                        beep: !0,
-                        pm: !0
-                    },
-                    on_notice: {
-                        flash: !1,
-                        beep: !0,
-                        pm: !0
-                    }
-                },
-                custom_notices: [],
-                default_notice: function() {
-                    return {
-                        nick: null,
-                        msg: "",
-                        flash: !1,
-                        beep: !1,
-                        pm: !1,
-                        id: String.uniqueID(),
-                        autoescape: !0
-                    };
-                }
+                standard_notices: [ {
+                    type: "^(?!SERVER)+NOTICE+$",
+                    classes: "",
+                    beep: !0,
+                    tabhl: ui.HIGHLIGHT.speech,
+                    id: "notice"
+                }, {
+                    type: "PRIVMSG$",
+                    flash: !0,
+                    beep: !0,
+                    pm: !0,
+                    tabhl: ui.HIGHLIGHT.speech,
+                    id: "pm"
+                }, {
+                    type: "^OUR",
+                    classes: "our-msg",
+                    id: "ourmsg"
+                }, {
+                    nick: "(^tf2)|((serv|bot)$)",
+                    classes: "bot",
+                    types: [ ui.WINDOW.channel ],
+                    "case": !0,
+                    id: "bot"
+                }, {
+                    msg: "^\\!",
+                    classes: "command",
+                    types: [ ui.WINDOW.channel ],
+                    id: "cmd"
+                }, {
+                    mentioned: !0,
+                    highlight: "mentioned",
+                    notus: !0,
+                    tabhl: ui.HIGHLIGHT.us,
+                    id: "mention"
+                }, {
+                    nick: "^((?!(^tf2|bot$|serv$)).)*$",
+                    mentioned: !0,
+                    classes: "",
+                    beep: !0,
+                    pm: !0,
+                    notus: !0,
+                    "case": !0,
+                    id: "onmention"
+                }, {
+                    nick: "^((?!(^tf2|bot$|serv$)).)*$",
+                    msg: "^((?!(^\\!)).)*$",
+                    classes: "",
+                    highlight: !0,
+                    notus: !0,
+                    "case": !0,
+                    tabhl: ui.HIGHLIGHT.activity,
+                    types: [ ui.WINDOW.channel ],
+                    id: "hl"
+                } ],
+                custom_notices: []
             },
             key: cookies.options,
             minimize: !0
         },
+        defaultNotice: function() {
+            return {
+                id: String.uniqueID(),
+                autoescape: !0,
+                description: ""
+            };
+        },
+        notice_filter: function(data) {
+            return !(!data.msg || "" === data.msg.trim()) || !(!data.nick || "" === data.nick.trim()) || !(!data.type || "" === data.type.trim()) || data.notus;
+        },
         save: function() {
-            return this.set("custom_notices", _.reject(this.get("custom_notices"), function(data) {
-                return "" === data.msg.trim();
-            })), this.parent();
+            return this.set("custom_notices", _.filter(this.get("custom_notices"), this.notice_filter)), 
+            this.set("standard_notices", _.filter(this.get("standard_notices"), this.notice_filter)), 
+            this.parent();
         },
         set: function(key, data) {
             var props = key.split(".");
@@ -7537,30 +7586,52 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             _filter: _.not(_.isEmpty)
         }), irc.NodeConnection = new Class({
             Implements: [ Options, Events ],
-            Binds: [ "recv", "error", "_connected", "_disconnected" ],
+            Binds: [ "_recv", "_error" ],
             options: {
-                socket: {
-                    url: document.location.hostname
-                },
+                socket_connect: document.location.hostname,
                 nickname: "ircconnX",
                 password: "",
                 serverPassword: null,
                 autoConnect: !0,
-                autoRejoin: !1,
                 debug: !0,
                 floodProtection: !1,
+                autoretry: !0,
                 retryInterval: 5e3,
-                retryScalar: 2
+                clientID: util.randHexString(16)
             },
             connected: !1,
             initialize: function(options) {
                 var self = this;
-                self.setOptions(options);
-                var ip = util.formatter("{url}", self.options.socket), socket = self.socket = io.connect(ip), $evts = {
-                    raw: self.recv,
-                    echo: _.log,
-                    connected: self._connected,
-                    disconnect: self._disconnected,
+                options = self.setOptions(options).options;
+                var socket = self.socket = io.connect(options.socket_connect, {
+                    reconnect: options.autoretry,
+                    "reconnection delay": options.retryInterval,
+                    "max reconnection attempts": options.retryAttempts
+                }), $evts = {
+                    raw: self._recv,
+                    connected: function() {
+                        self.connected = !0, self.attempts = 0, self.fireEvent("connected");
+                    },
+                    disconnect: function() {
+                        self.connected = !1;
+                    },
+                    reconnect: function() {
+                        console.log("reconnected"), self.socket.emit("reconnect", options);
+                    },
+                    reconnecting: function() {
+                        console.log("reattempt"), self.fireEvent("retry", {
+                            next: options.retryInterval
+                        });
+                    },
+                    lostConnection: function() {
+                        self.fireEvent("lostConnection", self.attempts++), self.connected = !1;
+                    },
+                    abort: function() {
+                        new ui.Alert({
+                            title: "Lost connection to IRC server",
+                            text: "Server lost connection to the IRC server"
+                        }), self.connected = !1;
+                    },
                     max_connections: function() {
                         new ui.Alert({
                             title: "Maximum connections reached",
@@ -7570,10 +7641,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                             }
                         });
                     },
-                    terminated: function(message) {
-                        alert(message);
-                    },
-                    error: self.error
+                    echo: _.log,
+                    error: self._error
                 };
                 _.each($evts, function(fn, key) {
                     fn ? socket.on(key, fn) : socket.on(key, function() {
@@ -7584,16 +7653,10 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             connect: function() {
                 this.socket.emit("irc", this.options);
             },
-            _connected: function() {
-                this.connected = !0, this.fireEvent("connected"), this.__retry = this.options.retryInterval;
-            },
             disconnect: function() {
                 this.socket.emit("quit"), this.socket.disconnect();
             },
-            _disconnected: function() {
-                this.connected = !1, this.autoretry();
-            },
-            recv: function(data) {
+            _recv: function(data) {
                 var processed = util.parseIRCData(data.raw);
                 this.fireEvent("recv", processed);
             },
@@ -7601,16 +7664,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 return this.connected ? (this.socket.emit("send", data), !0) : (console.error("disconnected dude"), 
                 void 0);
             },
-            error: function() {
-                console.error(arguments), this.fireEvent("error");
-            },
-            autoretry: function() {
-                if (!this.connected) {
-                    var next = this.__retry *= this.options.retryScalar;
-                    return this.fireEvent("retry", {
-                        next: next
-                    }), this.socket.emit("retry", "please"), _.delay(this.autoretry, next, this);
-                }
+            _error: function() {
+                console.error(arguments), this.fireEvent("error", arguments);
             }
         }), auth.loggedin = !1, auth.enabled = !1, auth.passAuth = $lambda(!0), auth.bouncerAuth = $lambda(!1), 
         irc.IRCClient = new Class({
@@ -7662,7 +7717,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 self.tracker = new irc.IRCTracker(self);
             },
             connect: function() {
-                return this.connection.connect();
+                return this.connection.connect(), this;
             },
             connected: function() {
                 this.trigger("connect", {});
@@ -7684,8 +7739,12 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                     channels: "ALL"
                 }), this.disconnect(), this.trigger("disconnect"), this.__signedOn = !1), this;
             },
-            lostConnection: function() {
-                console.log("todo"), console.log(arguments);
+            lostConnection: function(attempt) {
+                console.log(arguments), this.writeMessages(lang.connRetry, {
+                    retryAttempts: attempt
+                }, {
+                    channels: "ALL"
+                });
             },
             retry: function(data) {
                 this.trigger("retry", data), this.writeMessages(lang.connRetry, {
@@ -7825,8 +7884,15 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 }), !0;
             },
             _signOn: function() {
-                var channels;
-                this.options, this.writeMessages(lang.signOn), this.writeMessages(lang.loginMessages, {}, {
+                if (this.__signedOn) return console.log("REjoining " + util.formatChannelString(this.channels)), 
+                this.send(format(cmd.JOIN, {
+                    channel: util.formatChannelString(this.channels)
+                }));
+                {
+                    var channels;
+                    this.options;
+                }
+                this.writeMessages(lang.signOn), this.writeMessages(lang.loginMessages, {}, {
                     channel: BROUHAHA
                 }), !this.authed && auth.enabled ? (this.exec(util.format("/AUTH {username} {password}", this.options)), 
                 this.writeMessages.delay(100, this, lang.joinAfterAuth), this.activeTimers.autojoin = function() {
@@ -7915,9 +7981,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                     n: nick,
                     channel: ACTIVE,
                     msgs: []
-                };
-                type.toUpperCase();
-                var msgs = ndata.msgs;
+                }, msgs = (type.toUpperCase(), ndata.msgs);
                 switch (type.toLowerCase()) {
                   case "user":
                     msgs.push({
@@ -8238,15 +8302,21 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 });
             },
             irc_RPL_WHOISSERVER: function(data) {
-                var nick = data.args[1];
-                return data.args[2], _.last(data.args), this._whois(nick, "server", {
+                {
+                    var nick = data.args[1];
+                    data.args[2], _.last(data.args);
+                }
+                return this._whois(nick, "server", {
                     server: data.args[2],
                     serverdesc: _.last(data.args)
                 });
             },
             irc_RPL_WHOISOPERATOR: function(data) {
-                var nick = data.args[1];
-                return _.last(data.args), this._whois(nick, "oper", {
+                {
+                    var nick = data.args[1];
+                    _.last(data.args);
+                }
+                return this._whois(nick, "oper", {
                     opertext: _.last(data.args)
                 });
             },
@@ -8277,8 +8347,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 });
             },
             irc_RPL_WHOISOPERNAME: function(data) {
-                var nick = data.args[1];
-                return data.args[2], this._whois(nick, "opername", {
+                {
+                    var nick = data.args[1];
+                    data.args[2];
+                }
+                return this._whois(nick, "opername", {
                     opername: data.args[2]
                 });
             },
@@ -8301,8 +8374,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 });
             },
             irc_RPL_ENDOFWHOIS: function(data) {
-                var nick = data.args[1];
-                return _.last(data.args), delete this._whoisNick, this._whois(nick, "end", {});
+                {
+                    var nick = data.args[1];
+                    _.last(data.args);
+                }
+                return delete this._whoisNick, this._whois(nick, "end", {});
             },
             irc_RPL_AWAY: function(data) {
                 var nick = data.args[1], message = _.last(data.args);
@@ -8809,10 +8885,12 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             if (!_.isEmpty(validators)) {
                 var text = $ele.val(), failed = _.find(validators, function(validator) {
                     return !validator.test(text, $ele);
-                }), failbool = !!failed, controlpar = $ele.getParent(".control-group").toggleClass("has-error", failbool);
-                return failbool ? getTemplate("failed-validator", function(template) {
-                    Elements.from(template(failed)).inject(controlpar);
-                }) : controlpar.getElements(".help-block").dispose(), !failed;
+                }), failbool = !!failed, $controlpar = $ele.getParent(".control-group").toggleClass("has-error", failbool);
+                return failbool ? 0 === $controlpar.getElements(".help-block").filter(function(ele) {
+                    return ele.html() === failed.description;
+                }).length && getTemplate("failed-validator", function(template) {
+                    Elements.from(template(failed)).inject($controlpar);
+                }) : $controlpar.getElements(".help-block").dispose(), !failed;
             }
         }
         var LoginBox = function(parentElement, callback, settings, networkName, validators) {
@@ -8861,34 +8939,37 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
     }(), ui.IUIOptions = new Class({
         theme: ui.Theme,
         config: function() {
-            function setCustomNotice(notices) {
-                self.theme.customNotices = _.chain(notices).clone().reject(function(data) {
-                    return !(data.msg || "" === data.msg.trim() || data.nick && "" !== data.nick.trim());
-                }).map(function(notice) {
-                    return {
-                        msg: new RegExp(notice.autoescape ? String.escapeRegExp(notice.msg) : notice.msg),
+            function setNotices() {
+                var notices = uiOptions.get("standard_notices").concat(uiOptions.get("custom_notices")), notifiers = _.chain(notices).filter(uiOptions.notice_filter).map(function(notice) {
+                    var onotice = {
                         beep: notice.beep,
-                        flash: notice.flash
+                        flash: notice.flash,
+                        pm: notice.pm,
+                        mentioned: notice.mentioned,
+                        notus: notice.notus,
+                        highlight: notice.highlight,
+                        tabhl: notice.tabhl,
+                        classes: notice.classes,
+                        types: notice.types
                     };
+                    return _.each([ "msg", "nick", "type" ], function(type) {
+                        notice[type] && (onotice[type] = new RegExp(notice.autoescape ? String.escapeRegExp(notice[type]) : notice[type], notice.case ? "i" : ""));
+                    }), _.clean(onotice);
                 }).value();
+                self.theme.messageParsers.empty().combine(notifiers), self.theme.config = uiOptions;
             }
-            function setStandardNotice(notices) {
-                _.each(self.theme.messageParsers, function(parser) {
-                    _.has(notices, parser.id) && _.extend(parser, notices[parser.id]);
-                });
-            }
-            var self = this;
+            var self = this, options = self.options;
             if (self.uiOptions instanceof config.OptionModel) return this;
             var uiOptions = self.uiOptions = self.uiOptions2 = new config.OptionModel({
-                defaults: self.options.uiOptionsArg
+                defaults: options.uiOptionsArg
             });
             return uiOptions.on({
                 "change:style_hue": function() {
                     self.updateStylesheet();
                 },
                 "change:font_size": self.updateStylesheet,
-                "change:custom_notices": setCustomNotice,
-                "change:notices": setStandardNotice,
+                "change:custom_notices": setNotices,
+                "change:standard_notices": setNotices,
                 "change:show_nicklist": function() {
                     _.each(self.windowArray, function(win) {
                         win.toggleNickList();
@@ -8900,11 +8981,10 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                         win.toggleAutocomplete(completer.intrusive);
                     });
                 }
-            }), setCustomNotice(uiOptions.get("custom_notices")), setStandardNotice(uiOptions.get("notices")), 
-            self.setModifiableStylesheet({
-                style_hue: self.options.hue || self.uiOptions.get("style_hue"),
-                style_saturation: self.options.saturation || self.uiOptions.get("style_saturation"),
-                style_brightness: self.options.brightness || self.uiOptions.get("style_brightness")
+            }), setNotices(), self.setModifiableStylesheet({
+                style_hue: options.hue || self.uiOptions.get("style_hue"),
+                style_saturation: options.saturation || self.uiOptions.get("style_saturation"),
+                style_brightness: options.brightness || self.uiOptions.get("style_brightness")
             }), self;
         },
         setModifiableStylesheet: function(vals) {
@@ -9000,7 +9080,9 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 vis;
             }
         });
-    }(), ui.StandardUI = new Class({
+    }();
+    var BASE = "login";
+    return ui.StandardUI = new Class({
         Implements: [ Options, ui.IIRCClient, ui.IWindows, ui.ILogin, ui.IUIOptions, ui.INotifiers ],
         Binds: [ "whoisURL", "updateStylesheet", "nextWindow", "prevWindow", "optionsWindow", "faqWindow", "privacyWindow", "aboutWindow", "feedbackWindow", "embeddedWindow" ],
         options: {
@@ -9020,7 +9102,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         postInitialize: function() {
             function checkRoute(data) {
                 var request = util.unformatURL(data.request).toLowerCase();
-                if (console.log("Route: %s Formatted: %s", data.request, request), !self.active || request !== self.active.identifier) switch (request) {
+                if (!self.active || request !== self.active.identifier) switch (request) {
                   case "options":
                     self.optionsWindow();
                     break;
@@ -9054,8 +9136,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                     });
                 }
             }
-            var self = this;
-            return self.options.routerPrefix, self.nav = new ui.NavBar({
+            {
+                var self = this;
+                self.options.routerPrefix;
+            }
+            return self.nav = new ui.NavBar({
                 element: self.outerTabs,
                 menuElement: self.element
             }), self.nav.on({
@@ -9074,7 +9159,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             }), this;
         },
         updateURI: function(url) {
-            this.router && this.router.navigate(util.formatURL(url || this.active.identifier));
+            url = url || this.active.identifier, this.router && (url != BASE || location.hash) && this.router.navigate(util.formatURL(url));
         },
         whoisURL: function(e, target) {
             var client = target.getParent(".window").retrieve("window").client, nick = target.get("data-user");
@@ -9115,7 +9200,6 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             appTitle: "",
             networkName: "",
             networkServices: [],
-            initialNickname: "",
             minRejoinTime: [ 5, 20, 300 ],
             validators: {
                 nick: [ {
@@ -9145,27 +9229,32 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         },
         clients: [],
         initialize: function(element, UI, options) {
-            this.setOptions(options);
-            var self = this, opts = self.options;
+            options = this.setOptions(options).options;
+            var self = this, settings = self.options.settings = new config.Settings(options.settings), query = window.location.search;
+            if (query) {
+                var parsed = query.slice(1).parseQueryString();
+                parsed.channels && settings.set("channels", concatUnique(settings.get("channels"), util.unformatChannelString(parsed.channels)));
+            }
             window.addEvent("domready", function() {
-                var settings = self.options.settings = new config.Settings(opts.settings);
-                self.element = $(element), self.ui = new UI(self.element, new ui.Theme(opts.theme), opts), 
-                opts.node && Asset.javascript(opts.socketio), settings.get("newb") && (self.welcome(), 
+                self.element = $(element), self.ui = new UI(self.element, new ui.Theme(options.theme), options), 
+                options.node && Asset.javascript(options.socketio), settings.get("newb") && (self.welcome(), 
                 settings.set("newb", !1)), self.ui.loginBox(), self.ui.addEvent("login:once", function(loginopts) {
-                    var ircopts = _.extend(Object.subset(opts, [ "settings", "specialUserActions", "minRejoinTime", "networkServices", "loginRegex", "node" ]), loginopts), client = self.IRCClient = new irc.IRCClient(ircopts);
+                    var ircopts = _.extend(Object.subset(options, [ "settings", "specialUserActions", "minRejoinTime", "networkServices", "loginRegex", "node" ]), loginopts), client = self.IRCClient = new irc.IRCClient(ircopts);
                     self.ui.newClient(client), client.writeMessages(lang.copyright), client.connect(), 
                     client.addEvent("auth", function(data) {
                         self.ui.showNotice({
                             title: "Authenticated with network!",
                             body: util.format("{nick}: {message}", data)
                         }, !0);
-                    }), window.onbeforeunload = function(e) {
-                        if (client.isConnected()) {
-                            var message = "This action will close all active IRC connections.";
-                            return (e = e || window.event) && (e.returnValue = message), message;
-                        }
-                    }, window.addEvent("unload", client.quit), window.onunload = client.quit, auth.enabled || self.ui.beep(), 
-                    self.fireEvent("login", {
+                    }), window.addEvents({
+                        beforeunload: function(e) {
+                            if (client.isConnected()) {
+                                var message = "This action will close all active IRC connections.";
+                                return (e || window.event).returnValue = message, message;
+                            }
+                        },
+                        unload: client.quit
+                    }), self.fireEvent("login", {
                         IRCClient: client,
                         parent: self
                     });
@@ -9177,11 +9266,6 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 element: this.element,
                 firstvisit: !0
             }, this.options));
-            var settings = this.options.settings;
-            storage.remove("qweb-new"), [ "account", "password", "nickname", "channels" ].each(function(key) {
-                var skey = "qweb-" + key, val = storage.get(skey);
-                val && settings.set(key, val), storage.remove(skey);
-            });
         }
     }), ui.QUI = new Class({
         Extends: ui.StandardUI,
@@ -9272,14 +9356,6 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                     keys: "ctrl+c",
                     description: "",
                     handler: _.partial(util.wrapSelected, ".window:not(.hidden) .input .irc-input", util.getStyleByName("colour").bbcode)
-                },
-                submitInput: {
-                    keys: "enter",
-                    description: "",
-                    handler: function(e) {
-                        var $tar = e.target;
-                        $tar.hasClass("irc-input") && $tar.getParent(".window").retrieve("window").sendInput(e, $tar);
-                    }
                 }
             }
         },
@@ -9301,7 +9377,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                         inputKeyboard.activate();
                     },
                     keydown: function(e) {
-                        keyboard.isActive() && (e.alt && !isNaN(e.key) && e.key <= self.windowArray.length ? self.selectWindow(e.key - 1) : !self.active.$input || e.alt || e.control || e.meta || !isChar(e.code) || self.active.$input.focus());
+                        keyboard.isActive() && (e.alt && !isNaN(e.key) && e.key <= self.windowArray.length ? self.selectWindow(e.key - 1) : self.active.$input && !(e.alt || e.control || e.meta) && isChar(e.code) && self.active.$input.focus());
                     }
                 });
             }
@@ -9570,7 +9646,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             });
             self.__theme = _.map(defaults, function(str) {
                 return util.formatSafe(str, thememap);
-            }), self.highlightClasses.channels = {};
+            }), self.highlightClasses.channels = {}, self.config = config;
         },
         formatMessage: function($ele, type, _data, highlight) {
             var self = this, isobj = _.isObject(_data), data = isobj ? _.clone(_data) : _data;
@@ -9579,10 +9655,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 var val = data[key];
                 val && (_.isArray(val) && (val = val.join("")), data[key] = self.urlerize(val));
             }));
-            var themed = type ? self.formatText(type, data, highlight) : data, result = self.colourise(themed), timestamp = templates.timestamp({
+            var themed = type ? self.formatText(type, data, highlight) : data, result = self.colourise(themed), timestamp = self.config && self.config.get("show_timestamps") ? templates.timestamp({
                 time: util.IRCTimestamp(new Date())
-            }), msghtml = timestamp + result;
-            return $ele.addClass("colourline").insertAdjacentHTML("beforeend", msghtml), result;
+            }) : "";
+            return $ele.addClass("colourline").insertAdjacentHTML("beforeend", timestamp + result), 
+            result;
         },
         formatElement: function(line, $ele) {
             var result = this.colourise(this.urlerize(line));
@@ -9616,58 +9693,12 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         urlerize: function(text) {
             return util.urlifier.parse(text);
         },
-        messageParsers: [ {
-            type: /^(?!SERVER)+NOTICE+$/,
-            classes: "",
-            beep: !0,
-            id: "on_notice",
-            tabhl: ui.HIGHLIGHT.speech
-        }, {
-            type: /PRIVMSG$/,
-            flash: !0,
-            beep: !0,
-            pm: !0,
-            id: "on_pm",
-            tabhl: ui.HIGHLIGHT.speech
-        }, {
-            type: /^OUR/,
-            classes: "our-msg"
-        }, {
-            nick: /(^tf2)|((serv|bot)$)/i,
-            classes: "bot",
-            types: [ ui.WINDOW.channel ]
-        }, {
-            msg: /^\!/,
-            classes: "command",
-            types: [ ui.WINDOW.channel ]
-        }, {
-            mentioned: !0,
-            highlight: "mentioned",
-            notus: !0,
-            tabhl: ui.HIGHLIGHT.us
-        }, {
-            nick: /^((?!(^tf2|bot$|serv$)).)*$/i,
-            mentioned: !0,
-            classes: "",
-            beep: !0,
-            pm: !0,
-            notus: !0,
-            id: "on_mention"
-        }, {
-            nick: /^((?!(^tf2|bot$|serv$)).)*$/i,
-            msg: /^((?!(^\!)).)*$/,
-            classes: "",
-            highlight: !0,
-            notus: !0,
-            id: "highlighter",
-            tabhl: ui.HIGHLIGHT.activity,
-            types: [ ui.WINDOW.channel ]
-        } ],
+        messageParsers: [],
         highlightClasses: [ "highlight1", "highlight2" ],
         highlightAndNotice: function(data, type, win, $ele) {
-            var self = this, tabHighlight = ui.HIGHLIGHT.none, highlights = self.highlightClasses, nick = win.client.nickname, notus = data.n !== nick, parsers = _.clone(self.messageParsers).concat(self.customNotices);
+            var self = this, tabHighlight = ui.HIGHLIGHT.none, highlights = self.highlightClasses, nick = win.client.nickname, notus = data.n !== nick;
             return data && type && /(NOTICE|ACTION|MSG)$/.test(type) && (data.m && $ele.addClass("message"), 
-            _.each(parsers, function(parser) {
+            _.each(self.messageParsers, function(parser) {
                 parser.notus && !notus || parser.types && !parser.types.contains(win.type) || parser.type && !parser.type.test(type) || parser.msg && !parser.msg.test(data.m) || parser.nick && !parser.nick.test(data.n) || parser.mentioned && !util.testForNick(nick, data.m) || ((!win.active && win.name !== BROUHAHA || !document.hasFocus()) && (parser.flash && win.parentObject.flash(), 
                 parser.beep && win.parentObject.beep(), parser.pm && win.parentObject.showNotice({
                     title: "IRC " + type + "!",
@@ -9679,6 +9710,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         }
     }), ui.Window = new Class({
         Extends: Epitome.View,
+        Binds: [ "sendInput" ],
         options: {
             events: {},
             onReady: function() {
@@ -9713,9 +9745,9 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         },
         addLine: function(type, data, colour, $ele) {
             var self = this, parent = self.parentObject, highlight = this.name !== BROUHAHA ? parent.theme.highlightAndNotice(data, type, self, $ele) : ui.HIGHLIGHT.none, hl_line = !1;
-            self.active || highlight === ui.HIGHLIGHT.none || self.highlightTab(highlight), 
-            parent.theme.formatMessage($ele, type, data, hl_line), self.lines.adopt($ele).maxChildren(this.options.maxLines), 
-            self.getOption("lastpos_line") && type.endsWith("CHANMSG") && (this.lastLine = (this.lastLine || Element.from(templates.messageLine())).inject(this.lines));
+            self.active || highlight === ui.HIGHLIGHT.none || self.highlightTab(highlight);
+            parent.theme.formatMessage($ele, type, data, hl_line);
+            self.lines.adopt($ele).maxChildren(this.options.maxLines), self.getOption("lastpos_line") && type.endsWith("CHANMSG") && (this.lastLine = (this.lastLine || Element.from(templates.messageLine())).inject(this.lines));
         },
         errorMessage: function(message) {
             this.addLine("", message, "warn");
@@ -9737,7 +9769,6 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
         Binds: [ "close" ],
         options: {
             events: {
-                "click:relay(.input .send)": "sendInput",
                 "dblclick:relay(.input .nickname)": "setNickname",
                 "dblclick:relay(.topic)": "editTopic",
                 "contextmenu:relay(.lines .nick)": "nickLinesMenu",
@@ -9764,15 +9795,15 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 id: self.name.clean().replace(" ", "-"),
                 topic: !1,
                 needsInput: hasInput,
-                nick: self.client ? self.client.nickname : "",
-                splitPane: !1
+                nick: self.client ? self.client.nickname : ""
             }));
             var $win = self.window = self.element.getElement(".window").store("window", self), $content = self.content = $win.getElement(".content"), lines = self.lines = $content.getElement(".lines");
             return lines.store("window", self), type === ui.WINDOW.channel && ($win.addClass("channel"), 
             self.toggleNickList(), self.updateTopic("")), hasInput && ($win.addClass("ircwindow"), 
             self.fxscroll = new Fx.AutoScroll(lines, {
                 start: !1
-            }), self.$input = $win.getElement(".input .irc-input")), self;
+            }), self.$input = $win.getElement(".input .irc-input"), $win.getElement("form").addEvent("submit", self.sendInput)), 
+            self;
         },
         close: function(e) {
             return e && e.stop(), this.closed ? void 0 : (util.isChannelType(this.type) && !util.isBaseWindow(this.name) && this.client.exec("/PART " + this.name), 
@@ -9828,8 +9859,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             this.parent());
         },
         _selectUpdates: function() {
-            var self = this;
-            if (self.parentObject, self.fxscroll && self.fxscroll.start(), self.completer || self.type !== ui.WINDOW.channel || (self.completer = new Completer(self.window.getElement(".input .tt-ahead"), self.history.get(self.name), {
+            {
+                var self = this;
+                self.parentObject;
+            }
+            if (self.fxscroll && self.fxscroll.start(), self.completer || self.type !== ui.WINDOW.channel || (self.completer = new Completer(self.window.getElement(".input .tt-ahead"), self.history.get(self.name), {
                 autocomplete: self.getOption("completer").intrusive
             }), self.completer.$hint.addClass("decorated"), self.$input.removeClass("decorated")), 
             util.isChannelType(self.type)) {
@@ -9916,12 +9950,14 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             $menu.addClass("dropdownmenu").setPosition(evt.client);
         },
         nickListMenu: function(evt, $tar) {
-            var $par = $tar.getParent(".user").toggleClass("selected");
-            this.createNickMenu($par.get("data-user"), $par, {
-                close: function() {
-                    $par.removeClass("selected");
-                }
-            });
+            {
+                var $par = $tar.getParent(".user").toggleClass("selected");
+                this.createNickMenu($par.get("data-user"), $par, {
+                    close: function() {
+                        $par.removeClass("selected");
+                    }
+                });
+            }
         },
         menuClick: function(e, $tar) {
             var action = $tar.get("data-exec");
@@ -9985,7 +10021,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             var lnh = self.lastNickHash, nicks = [];
             nicklist.each(function(nickobj, index) {
                 var nick = nickobj.nick, old = lnh[nick];
-                nicks.push(nick), old && old.prefix === nickobj.prefix || (lnh[nick] = self.nickListAdd(nickobj, index));
+                nicks.push(nick), old && old.prefix === nickobj.prefix || (old && old.element && old.element.dispose(), 
+                lnh[nick] = self.nickListAdd(nickobj, index));
             }), _.each(_.difference(_.keys(lnh), nicks), function(nick) {
                 lnh[nick].element.dispose(), delete lnh[nick];
             });
@@ -10067,20 +10104,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 pane: "options",
                 events: {
                     "change:relay(#options input)": "inputChange",
-                    "change:relay(#options #standard-notices input)": "snoticeChange",
-                    "change:relay(#options #custom-notices input)": "noticeChange",
+                    "change:relay(#options .notice-group input)": "noticeChange",
                     "click:relay(#options #add-notice)": "addNotifier",
-                    "click:relay(#options #custom-notices .remove-notice)": "removeNotifier",
+                    "click:relay(#options .remove-notice)": "removeNotifier",
                     "click:relay(#options #dn_state)": "dnToggle",
                     "click:relay(#options #notice-test)": "noticeTest"
-                },
-                onSnoticeChange: function(e, target) {
-                    e.stop();
-                    var notices = _.clone(this.model.get("notices"));
-                    _.assign(notices, target.get("id"), target.val()), this.model.set("notices", notices);
-                },
-                onAddNotifier: function(e) {
-                    e.stop(), this.addNotifier();
                 },
                 onDnToggle: function(e, target) {
                     toggleNotifications(this.model), target.val(this.model.get("dn_state") ? lang.DISABLE : lang.ENABLE);
@@ -10095,34 +10123,32 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             },
             addNotifier: function(data) {
                 if (!data || Type.isDOMEvent(data)) {
-                    data = this.model.get("default_notice")();
+                    data = this.model.defaultNotice();
                     var n = _.clone(this.model.get("custom_notices"));
                     n.push(data), this.model.set("custom_notices", n);
                 }
-                var parent = this.element.getElement("#custom-notices"), _data = _.clone(data);
+                var $addbtn = this.element.getElement("#add-notice"), _data = _.clone(data);
                 _data.lang = lang;
                 var temp = templates.customNotice(_data);
-                parent.insertAdjacentHTML("beforeend", temp);
+                $addbtn.insertAdjacentHTML("beforebegin", temp);
             },
             removeNotifier: function(e, target) {
                 e.stop();
-                var par = target.getParent(".custom-notice").dispose();
-                this.model.set("custom_notices", _.reject(this.model.get("custom_notices"), function(xs) {
-                    return xs.id === par.id;
+                var type = target.getParent(".notice-group").id, par = target.getParent(".controls").dispose(), id = par.get("data-id");
+                this.model.set("custom_notices", _.reject(this.model.get(type), function(xs) {
+                    return xs.id === id;
                 }));
             },
             noticeChange: function(e, target) {
                 e.stop();
-                var notices = _.clone(this.model.get("custom_notices")), par = target.getParent(".custom-notice");
-                _.findWhere(notices, {
-                    id: par.id
-                })[target.get("data-id")] = target.val(), this.model.set("custom_notices", notices);
+                var type = target.getParent(".notice-group").id, notices = _.clone(this.model.get(type)), par = target.getParent(".controls"), notice = _.findWhere(notices, {
+                    id: par.get("data-id")
+                });
+                notice[target.get("data-id")] = target.val(), this.model.set("custom_notices", notices);
             },
             postRender: function() {
                 var model = this.model, options = this.options;
-                return _.each(model.get("custom_notices"), function(notice) {
-                    notice.lang = lang, this.addNotifier(notice);
-                }, this), this.element.getElements(".slider").each(function(slider) {
+                return this.element.getElements(".slider").each(function(slider) {
                     var id = slider.get("id"), knob = slider.getElement(".knob");
                     new Slider(slider, knob, {
                         steps: 36,
@@ -10140,7 +10166,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             },
             getData: function() {
                 var data = this.model.toJSON();
-                return data.lang = lang, data;
+                return data;
             },
             save: function(e) {
                 e && e.stop(), this.model.save(), this.destroy();

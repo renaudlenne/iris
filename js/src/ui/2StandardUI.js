@@ -1,3 +1,4 @@
+var BASE = "login";
 
 ui.StandardUI = new Class({
     // Extends: ui.NotificationUI,
@@ -58,7 +59,7 @@ ui.StandardUI = new Class({
 
         function checkRoute(data) {
             var request = util.unformatURL(data.request).toLowerCase();
-            console.log("Route: %s Formatted: %s", data.request, request);
+            // console.log("Route: %s Formatted: %s", data.request, request);
 
             if(self.active && request === self.active.identifier) {
                 return;
@@ -146,8 +147,8 @@ ui.StandardUI = new Class({
     },
 
     updateURI: function(url) {
-        // hasher.setHash(util.formatURL(url || this.active.identifier));
-        if(this.router) this.router.navigate(util.formatURL(url || this.active.identifier));
+        url = url || this.active.identifier;
+        if(this.router && (url != BASE || location.hash)) this.router.navigate(util.formatURL(url));
     },
 
     whoisURL: function(e, target) {

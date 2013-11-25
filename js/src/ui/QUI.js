@@ -120,7 +120,7 @@ ui.QUI = new Class({
                 keys: 'ctrl+c',
                 description: '',
                 handler: _.partial(util.wrapSelected, '.window:not(.hidden) .input .irc-input', util.getStyleByName('colour').bbcode)
-            },
+            }/*,
             submitInput: {
                 keys: 'enter',
                 description: '',
@@ -130,7 +130,7 @@ ui.QUI = new Class({
                         $tar.getParent('.window').retrieve('window').sendInput(e, $tar);
                     }
                 }
-            }
+            }*/
         }
     },
 
