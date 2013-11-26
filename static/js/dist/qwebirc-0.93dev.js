@@ -1,6 +1,6 @@
 /*!
 qwebirc-WebIRC-client ::: Version 0.93.11 :::
-Built on 2013-11-25
+Built on 2013-11-26
 Description: webirc client - See qwebirc.org
 Authors: Graeme Yeates (www.github.com/megawac)
 Repository: www.github.com/megawac/qwebirc-enhancements
@@ -2061,10 +2061,9 @@ var Slider = new Class({
         }
     });
 }(), function() {
-    var root = this, previousUnderscore = root._, ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype, getTime = Date.now, push = ArrayProto.push, slice = ArrayProto.slice, concat = ArrayProto.concat, toString = ObjProto.toString, hasOwnProperty = ObjProto.hasOwnProperty, nativeIndexOf = ArrayProto.indexOf, nativeLastIndexOf = ArrayProto.lastIndexOf, _ = (FuncProto.bind, 
-    function(obj) {
+    var root = this, previousUnderscore = root._, ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype, getTime = Date.now, push = ArrayProto.push, slice = ArrayProto.slice, concat = ArrayProto.concat, toString = ObjProto.toString, hasOwnProperty = ObjProto.hasOwnProperty, nativeIndexOf = ArrayProto.indexOf, nativeLastIndexOf = ArrayProto.lastIndexOf, nativeBind = FuncProto.bind, _ = function(obj) {
         return obj instanceof _ ? obj : this instanceof _ ? (this._wrapped = obj, void 0) : new _(obj);
-    });
+    };
     "undefined" != typeof exports ? ("undefined" != typeof module && module.exports && (exports = module.exports = _), 
     exports._ = _) : root._ = _, _.VERSION = "1.5.1";
     var isEnumerable = _.isEnumerable = Type.isEnumerable, each = _.each = _.forEach = function(obj, iterator, context) {
@@ -2263,7 +2262,7 @@ var Slider = new Class({
         return range;
     };
     _.bind = function(fn) {
-        return fn.bind(slice.call(arguments, 1));
+        return nativeBind.apply(fn, slice.call(arguments, 1));
     }, _.partial = function(func) {
         var args = slice.call(arguments, 1);
         return function() {
@@ -6954,7 +6953,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             command: "MODE {target} {mode} {args}"
         },
         AUTH: {
-            command: "MSG NickServ {username} {password}"
+            command: "MSG NickServ :identify {username} {password}"
         },
         KICK: {
             command: "KICK {channel} {kickee} :{message}"
@@ -7733,11 +7732,11 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                     message: message
                 });
             },
-            quit: function(message) {
-                return this.isConnected() && (this.send("QUIT :" + (message || lang.quit), !0), 
-                _.each(this.activeTimers, $clear), this.activeTimers = {}, this.writeMessages(lang.disconnected, {}, {
+            quit: function(message, notify) {
+                return this.isConnected() && (this.send("QUIT :" + (message || lang.quit), !1), 
+                notify && (_.each(this.activeTimers, $clear), this.activeTimers = {}, this.writeMessages(lang.disconnected, {}, {
                     channels: "ALL"
-                }), this.disconnect(), this.trigger("disconnect"), this.__signedOn = !1), this;
+                }), this.disconnect(), this.trigger("disconnect"), this.__signedOn = !1)), this;
             },
             lostConnection: function(attempt) {
                 console.log(arguments), this.writeMessages(lang.connRetry, {
@@ -8441,7 +8440,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             }
         }), irc.TwistedConnection = new Class({
             Implements: [ Events, Options ],
-            Binds: [ "send", "__completeRequest" ],
+            Binds: [ "send" ],
             options: {
                 initialNickname: "ircconnX",
                 minTimeout: 45e3,
@@ -8455,16 +8454,23 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 maxRetries: 5,
                 serverPassword: null
             },
+            connected: !1,
+            counter: 0,
+            __sendQueue: [],
+            __lastActiveRequest: null,
+            __activeRequest: null,
+            __sendQueueActive: !1,
+            __floodLastRequest: 0,
+            __retryAttempts: 0,
+            __floodCounter: 0,
+            __floodLastFlood: 0,
+            __timeoutId: null,
             initialize: function(options) {
-                var self = this;
-                self.setOptions(options), self.counter = 0, self.connected = !0, self.__floodLastRequest = 0, 
-                self.__floodCounter = 0, self.__floodLastFlood = 0, self.__retryAttempts = 0, self.__timeoutId = null, 
-                self.__timeout = self.options.initialTimeout, self.__lastActiveRequest = null, self.__activeRequest = null, 
-                self.__sendQueue = [], self.__sendQueueActive = !1;
+                this.setOptions(options), this.__timeout = this.options.initialTimeout;
             },
             connect: function() {
                 var self = this;
-                self.cacheAvoidance = util.randHexString(16);
+                self.connected = !0, self.cacheAvoidance = util.randHexString(16);
                 var request = self.newRequest("n");
                 request.addEvent("complete", function(stream) {
                     return stream ? stream[0] ? (self.sessionid = stream[1], self.recv(), void 0) : (self.disconnect(), 
@@ -8511,7 +8517,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             },
             __send: function(data, async) {
                 var request = this.newRequest("p", !1, !async);
-                null !== request && request.addEvent("complete", _.partial(this.__completeRequest, async)).send("s=" + this.sessionid + "&c=" + encodeURIComponent(data));
+                null !== request && request.addEvent("complete", _.bind(this.__completeRequest, this, async)).send("s=" + this.sessionid + "&c=" + encodeURIComponent(data));
             },
             __completeRequest: function(async, stream) {
                 return async && (this.__sendQueueActive = !1), stream && stream[0] ? (this.__processSendQueue(), 
@@ -9247,10 +9253,13 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                         }, !0);
                     }), window.onbeforeunload = function(e) {
                         if (client.isConnected()) {
+                            e = e || window.event, e.preventDefault = !0;
                             var message = "This action will close all active IRC connections.";
-                            return (e || window.onevent).returnValue = message, message;
+                            return e.returnValue = message, message;
                         }
-                    }, window.onunload = client.quit, self.fireEvent("login", {
+                    }, window.addEvent("unload", function() {
+                        client.quit();
+                    }), self.fireEvent("login", {
                         IRCClient: client,
                         parent: self
                     });

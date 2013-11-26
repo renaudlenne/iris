@@ -36,7 +36,7 @@ config.IRC_COMMANDS = { //maybe make these templates?
         command: "MODE {target} {mode} {args}"
     },
     "AUTH": {
-        command: "MSG NickServ {username} {password}"
+        command: "MSG NickServ :identify {username} {password}"
     },
     "KICK": {
         command: "KICK {channel} {kickee} :{message}"

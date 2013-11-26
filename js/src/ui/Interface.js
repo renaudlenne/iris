@@ -87,12 +87,14 @@ ui.Interface = new Class({
 
                 window.onbeforeunload = function(e) {
                     if (client.isConnected()) {//ie has gotten passed the IRC gate
+                        e = e || window.event;
+                        e.preventDefault = true;
                         var message = "This action will close all active IRC connections.";
-                        (e || window.onevent).returnValue = message;//legacy ie
+                        e.returnValue = message;//legacy ie
                         return message;
                     }
                 };
-                window.onunload = client.quit;
+                window.addEvent("unload", client.quit);
 
                 self.fireEvent("login", {
                     'IRCClient': client,
@@ -105,6 +107,6 @@ ui.Interface = new Class({
         ui.WelcomePane.show(this.ui, _.extend({
             element: this.element,
             firstvisit: true
-        }, this.options)); 
+        }, this.options));
     }
 });

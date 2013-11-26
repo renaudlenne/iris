@@ -1,9 +1,9 @@
 // /* This could do with a rewrite from scratch. */
 //going to rewrite using socket.io commet.
-// //COMMANDS = dict(p=push, n=newConnection, s=subscribe)
+// //uris = dict(p=push, n=newConnection, s=subscribe)
 irc.TwistedConnection = new Class({
     Implements: [Events, Options],
-    Binds: ["send","__completeRequest"],
+    Binds: ["send"],
     options: {
         initialNickname: "ircconnX",
         minTimeout: 45000,
@@ -17,26 +17,30 @@ irc.TwistedConnection = new Class({
         maxRetries: 5,
         serverPassword: null
     },
+    connected: false,
+    counter: 0,
+
+    __sendQueue: [],
+    __lastActiveRequest: null,
+    __activeRequest: null,
+    __sendQueueActive: false,
+
+    __floodLastRequest: 0,
+    __retryAttempts: 0,
+    __floodCounter: 0,
+    __floodLastFlood: 0,
+    __timeoutId: null,
+
+
 
     initialize: function(options) {
-        var self = this;
-        self.setOptions(options);
-        self.counter = 0;
-        self.connected = true;
-        self.__floodLastRequest = 0;
-        self.__floodCounter = 0;
-        self.__floodLastFlood = 0;
-        self.__retryAttempts = 0;
-        self.__timeoutId = null;
-        self.__timeout = self.options.initialTimeout;
-        self.__lastActiveRequest = null;
-        self.__activeRequest = null;
-        self.__sendQueue = [];
-        self.__sendQueueActive = false;
+        this.setOptions(options);
+        this.__timeout = this.options.initialTimeout;
     },
 
     connect: function() {
         var self = this;
+        self.connected = true;
         self.cacheAvoidance = util.randHexString(16);
         var request = self.newRequest("n");
 
@@ -155,7 +159,7 @@ irc.TwistedConnection = new Class({
         if (request === null) {
             return;
         }
-        request.addEvent("complete", _.partial(this.__completeRequest, async))
+        request.addEvent("complete", _.bind(this.__completeRequest, this, async))
                 .send("s=" + this.sessionid + "&c=" + encodeURIComponent(data));
     },
 

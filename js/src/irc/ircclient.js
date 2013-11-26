@@ -85,15 +85,17 @@ irc.IRCClient = new Class({
         });
     },
 
-    quit: function(message) {
-        if(this.isConnected()) {    
-            this.send("QUIT :" + (message || lang.quit), true);
-            _.each(this.activeTimers, $clear);
-            this.activeTimers = {};
-            this.writeMessages(lang.disconnected, {}, {channels: "ALL"});
-            this.disconnect();
-            this.trigger("disconnect");
-            this.__signedOn = false;
+    quit: function(message, notify) {
+        if(this.isConnected()) {
+            this.send("QUIT :" + (message || lang.quit), false);//stackoverflow.com/questions/3584288
+            if(notify) {//get out quick
+                _.each(this.activeTimers, $clear);
+                this.activeTimers = {};
+                this.writeMessages(lang.disconnected, {}, {channels: "ALL"});
+                this.disconnect();
+                this.trigger("disconnect");
+                this.__signedOn = false;
+            }
         }
         return this;
     },

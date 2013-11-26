@@ -1,3 +1,6 @@
+An instance of this code is up at http://geeks-irc.herokuapp.com
+
+
 Outdated installation instructions are at https://github.com/atheme/iris
 
 Additional dependencies:  
