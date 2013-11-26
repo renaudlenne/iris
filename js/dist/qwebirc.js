@@ -5871,7 +5871,7 @@ ui.IUIOptions = new Class({
                         tabhl: notice.tabhl,
                         classes: notice.classes,
                         types: notice.types
-                    }
+                    };
                     _.each(["msg", "nick", "type"], function(type) {
                         if(notice[type]) {
                             onotice[type] = new RegExp(notice.autoescape ? String.escapeRegExp(notice[type]) : notice[type],//format regex
@@ -5881,7 +5881,7 @@ ui.IUIOptions = new Class({
 
                     return _.clean(onotice);
                 })
-                .value()
+                .value();
             
             self.theme.messageParsers.empty().combine(notifiers);
             self.theme.config = uiOptions;
@@ -6460,16 +6460,14 @@ ui.Interface = new Class({
                     }, true);
                 });
 
-                window.addEvents({
-                    "beforeunload": function(e) {
-                        if (client.isConnected()) {//ie has gotten passed the IRC gate
-                            var message = "This action will close all active IRC connections.";
-                            (e || window.event).returnValue = message;//legacy ie
-                            return message;
-                        }
-                    },
-                    "unload": client.quit
-                });
+                window.beforeunload = function(e) {
+                    if (client.isConnected()) {//ie has gotten passed the IRC gate
+                        var message = "This action will close all active IRC connections.";
+                        (e || window.event).returnValue = message;//legacy ie
+                        return message;
+                    }
+                };
+                window.unload = client.quit;
 
                 self.fireEvent("login", {
                     'IRCClient': client,

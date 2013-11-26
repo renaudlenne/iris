@@ -24,7 +24,7 @@ ui.IUIOptions = new Class({
                         tabhl: notice.tabhl,
                         classes: notice.classes,
                         types: notice.types
-                    }
+                    };
                     _.each(["msg", "nick", "type"], function(type) {
                         if(notice[type]) {
                             onotice[type] = new RegExp(notice.autoescape ? String.escapeRegExp(notice[type]) : notice[type],//format regex
@@ -34,7 +34,7 @@ ui.IUIOptions = new Class({
 
                     return _.clean(onotice);
                 })
-                .value()
+                .value();
             
             self.theme.messageParsers.empty().combine(notifiers);
             self.theme.config = uiOptions;
