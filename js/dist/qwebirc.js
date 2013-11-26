@@ -4864,7 +4864,7 @@ irc.TwistedConnection = new Class({
         var self = this;
         self.setOptions(options);
         self.counter = 0;
-        self.disconnected = false;
+        self.connected = true;
         self.__floodLastRequest = 0;
         self.__floodCounter = 0;
         self.__floodLastFlood = 0;
@@ -4884,7 +4884,7 @@ irc.TwistedConnection = new Class({
 
         request.addEvent("complete", function(stream) {
             if (!stream) {
-                self.disconnected = true;
+                self.connected = false;
                 self.__error(lang.connectionFail);
                 return;
             }
@@ -4905,7 +4905,7 @@ irc.TwistedConnection = new Class({
     },
 
     disconnect: function() {
-        this.disconnected = true;
+        this.connected = false;
         this.__cancelTimeout();
         this.__cancelRequests();
     },
@@ -4913,9 +4913,9 @@ irc.TwistedConnection = new Class({
     newRequest: function(url, floodProtection, synchronous) {
         var self = this;
         //check if request should proceed
-        if (self.disconnected) {
+        if (!self.connected) {
             return null;
-        } else if (floodProtection && !self.disconnected && self.__isFlooding()) {
+        } else if (floodProtection && self.__isFlooding()) {
             self.disconnect();
             self.__error(lang.uncontrolledFlood);
         }
@@ -4957,7 +4957,7 @@ irc.TwistedConnection = new Class({
             self.__activeRequest = null;
             self.__cancelTimeout();
             if (!stream) {
-                if (!self.disconnected && self.__checkRetries()) {
+                if (self.connected && self.__checkRetries()) {
                     self.recv();
                 }
                 return;
@@ -4972,7 +4972,7 @@ irc.TwistedConnection = new Class({
     },
 
     send: function(data, synchronous) {
-        if (this.disconnected) {
+        if (!this.connected) {
             return false;
         }
         if (synchronous) {
@@ -5007,8 +5007,8 @@ irc.TwistedConnection = new Class({
         }
         if (!stream || (!stream[0])) {
             this.__sendQueue = [];
-            if (!this.disconnected) {
-                this.disconnected = true;
+            if (this.connected) {
+                this.connected = false;
                 this.__error(lang.connError, stream);
             }
             return false;
@@ -5033,7 +5033,7 @@ irc.TwistedConnection = new Class({
     },
 
     __checkRetries: function() { /* hmm, something went wrong! */
-        if (++this.__retryAttempts > this.options.maxRetries && !this.disconnected) {
+        if (++this.__retryAttempts > this.options.maxRetries && this.connected) {
             this.disconnect();
             this.__error(lang.connTimeOut, {retryAttempts: this.__retryAttempts});
             return false;
@@ -5058,8 +5058,8 @@ irc.TwistedConnection = new Class({
 
     __processData: function(o) {
         if (o[0] == false) {
-            if (!this.disconnected) {
-                this.disconnected = true;
+            if (this.connected) {
+                this.connected = false;
                 this.__error(lang.connError, o);
             }
             return false;

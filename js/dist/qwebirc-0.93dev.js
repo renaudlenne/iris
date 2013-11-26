@@ -8457,7 +8457,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             },
             initialize: function(options) {
                 var self = this;
-                self.setOptions(options), self.counter = 0, self.disconnected = !1, self.__floodLastRequest = 0, 
+                self.setOptions(options), self.counter = 0, self.connected = !0, self.__floodLastRequest = 0, 
                 self.__floodCounter = 0, self.__floodLastFlood = 0, self.__retryAttempts = 0, self.__timeoutId = null, 
                 self.__timeout = self.options.initialTimeout, self.__lastActiveRequest = null, self.__activeRequest = null, 
                 self.__sendQueue = [], self.__sendQueueActive = !1;
@@ -8468,7 +8468,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 var request = self.newRequest("n");
                 request.addEvent("complete", function(stream) {
                     return stream ? stream[0] ? (self.sessionid = stream[1], self.recv(), void 0) : (self.disconnect(), 
-                    self.__error(lang.connError, stream), void 0) : (self.disconnected = !0, self.__error(lang.connectionFail), 
+                    self.__error(lang.connError, stream), void 0) : (self.connected = !1, self.__error(lang.connectionFail), 
                     void 0);
                 });
                 var postdata = "nick=" + encodeURIComponent(self.options.initialNickname);
@@ -8476,13 +8476,12 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 request.send(postdata);
             },
             disconnect: function() {
-                this.disconnected = !0, this.__cancelTimeout(), this.__cancelRequests();
+                this.connected = !1, this.__cancelTimeout(), this.__cancelRequests();
             },
             newRequest: function(url, floodProtection, synchronous) {
                 var self = this;
-                if (self.disconnected) return null;
-                floodProtection && !self.disconnected && self.__isFlooding() && (self.disconnect(), 
-                self.__error(lang.uncontrolledFlood));
+                if (!self.connected) return null;
+                floodProtection && self.__isFlooding() && (self.disconnect(), self.__error(lang.uncontrolledFlood));
                 var request = new Request.JSON({
                     url: qwebirc.global.dynamicBaseURL + "e/" + url + "?r=" + self.cacheAvoidance + "&t=" + self.counter++,
                     async: !synchronous
@@ -8497,14 +8496,14 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                     var onComplete = function(stream) {
                         return request.__replaced ? (self.__lastActiveRequest = null, stream && self.__processData(stream), 
                         void 0) : (self.__activeRequest = null, self.__cancelTimeout(), stream ? (self.__processData(stream) && self.recv(), 
-                        void 0) : (!self.disconnected && self.__checkRetries() && self.recv(), void 0));
+                        void 0) : (self.connected && self.__checkRetries() && self.recv(), void 0));
                     };
                     request.addEvent("complete", onComplete), self.__scheduleTimeout(), request.send("s=" + self.sessionid);
                 }
             },
             send: function(data, synchronous) {
-                return this.disconnected ? !1 : (synchronous ? this.__send(data, !1) : (this.__sendQueue.push(data), 
-                this.__processSendQueue()), !0);
+                return this.connected ? (synchronous ? this.__send(data, !1) : (this.__sendQueue.push(data), 
+                this.__processSendQueue()), !0) : !1;
             },
             __processSendQueue: function() {
                 this.__sendQueueActive || 0 === this.__sendQueue.length || (this.sendQueueActive = !0, 
@@ -8516,8 +8515,8 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
             },
             __completeRequest: function(async, stream) {
                 return async && (this.__sendQueueActive = !1), stream && stream[0] ? (this.__processSendQueue(), 
-                void 0) : (this.__sendQueue = [], this.disconnected || (this.disconnected = !0, 
-                this.__error(lang.connError, stream)), !1);
+                void 0) : (this.__sendQueue = [], this.connected && (this.connected = !1, this.__error(lang.connError, stream)), 
+                !1);
             },
             __isFlooding: function() {
                 var t = Date.now(), floodt = t - this.__floodLastRequest;
@@ -8526,7 +8525,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 !1);
             },
             __checkRetries: function() {
-                if (++this.__retryAttempts > this.options.maxRetries && !this.disconnected) return this.disconnect(), 
+                if (++this.__retryAttempts > this.options.maxRetries && this.connected) return this.disconnect(), 
                 this.__error(lang.connTimeOut, {
                     retryAttempts: this.__retryAttempts
                 }), !1;
@@ -8538,7 +8537,7 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                 $defined(this.__activeRequest) && (this.__activeRequest.cancel(), this.__activeRequest = null);
             },
             __processData: function(o) {
-                return 0 == o[0] ? (this.disconnected || (this.disconnected = !0, this.__error(lang.connError, o)), 
+                return 0 == o[0] ? (this.connected && (this.connected = !1, this.__error(lang.connError, o)), 
                 !1) : (this.__retryAttempts = 0, o.each(function(x) {
                     this.fireEvent("recv", [ x ]);
                 }, this), !0);
