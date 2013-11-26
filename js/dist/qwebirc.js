@@ -6460,14 +6460,14 @@ ui.Interface = new Class({
                     }, true);
                 });
 
-                window.beforeunload = function(e) {
+                window.onbeforeunload = function(e) {
                     if (client.isConnected()) {//ie has gotten passed the IRC gate
                         var message = "This action will close all active IRC connections.";
-                        (e || window.event).returnValue = message;//legacy ie
+                        (e || window.onevent).returnValue = message;//legacy ie
                         return message;
                     }
                 };
-                window.unload = client.quit;
+                window.onunload = client.quit;
 
                 self.fireEvent("login", {
                     'IRCClient': client,

@@ -9246,12 +9246,12 @@ this.qwebirc.templates.modifiablecss = Handlebars.template(function(Handlebars, 
                             title: "Authenticated with network!",
                             body: util.format("{nick}: {message}", data)
                         }, !0);
-                    }), window.beforeunload = function(e) {
+                    }), window.onbeforeunload = function(e) {
                         if (client.isConnected()) {
                             var message = "This action will close all active IRC connections.";
-                            return (e || window.event).returnValue = message, message;
+                            return (e || window.onevent).returnValue = message, message;
                         }
-                    }, window.unload = client.quit, self.fireEvent("login", {
+                    }, window.onunload = client.quit, self.fireEvent("login", {
                         IRCClient: client,
                         parent: self
                     });
