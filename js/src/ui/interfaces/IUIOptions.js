@@ -5,8 +5,8 @@ ui.IUIOptions = new Class({
         var self = this;
         var options = self.options;
         if(self.uiOptions instanceof config.OptionModel) return this;
-        var uiOptions = self.uiOptions = self.uiOptions2 = new config.OptionModel({
-            defaults: options.uiOptionsArg
+        var uiOptions = self.uiOptions = self.uiOptions2 = new config.OptionModel({}, {
+            defaults: options.uiOptions
         });
         function setNotices() {
             var notices = uiOptions.get("standard_notices").concat(uiOptions.get("custom_notices"));
@@ -79,7 +79,7 @@ ui.IUIOptions = new Class({
         var self = this;
         getTemplate("modifiablecss", function(template) {
             var styles = _.extend({}, Browser, self.uiOptions.toJSON(), values);
-            var stylesheet = template(styles);//.split("}").join("}\n")
+            var stylesheet = template(styles);
             var node = self._styleSheet;
 
             if (node.styleSheet) { /* ie */

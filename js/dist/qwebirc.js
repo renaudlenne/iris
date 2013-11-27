@@ -2562,7 +2562,7 @@ config.IRC_COMMANDS = { //maybe make these templates?
         command: "MODE {target} {mode} {args}"
     },
     "AUTH": {
-        command: "MSG NickServ :identify {username} {password}"
+        command: "PRIVMSG NickServ :identify {username} {password}"
     },
     "KICK": {
         command: "KICK {channel} {kickee} :{message}"
@@ -2583,103 +2583,105 @@ config.COMMAND_ALIAS = {
     "SLAP": "ME"
 };
 
+var defaultOptions = {
+    "auto_open_pm": false,
+    "nick_ov_status": true,
+    "accept_service_invites": true,
+    "use_hiddenhost": true,
+    "lastpos_line": true,
+    "nick_colours": false,
+    "hide_joinparts": false,
+    "show_nicklist": !Browser.isMobile,
+    "show_timestamps": true,
+    "font_size": 12,
+    "volume": 100, //0-100
+
+    "completer": {
+        "intrusive": Browser.isDecent,
+        "store": !Browser.isMobile
+    },
+
+    "dn_state": false,
+    "dn_duration": 4000,
+
+    "highlight": true,
+    "highlight_mentioned": true,
+
+    "style_hue": 210,
+    "style_saturation": 0,
+    "style_brightness": 0,
+
+    "standard_notices": [
+        {
+            type: "^(?!SERVER)+NOTICE+$",//notice not server notice
+            classes: '',
+            beep: true,
+            tabhl: ui.HIGHLIGHT.speech,
+            id: 'notice'
+        },
+        {
+            type: "PRIVMSG$",
+            flash: true,
+            beep: true,
+            pm: true,
+            tabhl: ui.HIGHLIGHT.speech,
+            id: 'pm'
+        },
+        {
+            type: "^OUR",
+            classes: 'our-msg',
+            id: 'ourmsg'
+        },
+        {//match bots
+            nick: "(^tf2)|((serv|bot)$)",
+            classes: 'bot',
+            types: [ui.WINDOW.channel],
+            "case": true,
+            id: 'bot'
+        },
+        {
+            msg: "^\\!",
+            classes: 'command',
+            types: [ui.WINDOW.channel],
+            id: 'cmd'
+        },
+        {
+            mentioned: true,
+            highlight: 'mentioned',
+            notus: true,
+            tabhl: ui.HIGHLIGHT.us,
+            id: 'mention'
+        },
+        {
+            nick: "^((?!(^tf2|bot$|serv$)).)*$",
+            mentioned: true,
+            classes: '',
+            beep: true,
+            pm: true,
+            notus: true,
+            "case": true,
+            id: 'onmention'
+        },
+        {
+            nick: "^((?!(^tf2|bot$|serv$)).)*$",
+            msg: "^((?!(^\\!)).)*$", //dont hl commands
+            classes: '',
+            highlight: true,
+            notus: true,
+            "case": true,
+            tabhl: ui.HIGHLIGHT.activity,
+            types: [ui.WINDOW.channel],
+            id: 'hl'
+        }
+    ],
+
+    "custom_notices": []
+};
+
 config.OptionModel = new Class({
     Extends: Epitome.Model.Storage,
     options: {
-        defaults: {
-            "auto_open_pm": false,
-            "nick_ov_status": true,
-            "accept_service_invites": true,
-            "use_hiddenhost": true,
-            "lastpos_line": true,
-            "nick_colours": false,
-            "hide_joinparts": false,
-            "show_nicklist": !Browser.isMobile,
-            "show_timestamps": true,
-            "font_size": 12,
-            "volume": 100, //0-100
-
-            "completer": {
-                "intrusive": Browser.isDecent,
-                "store": !Browser.isMobile
-            },
-
-            "dn_state": false,
-            "dn_duration": 4000,
-
-            "highlight": true,
-            "highlight_mentioned": true,
-
-            "style_hue": 210,
-            "style_saturation": 0,
-            "style_brightness": 0,
-
-            "standard_notices": [
-                {
-                    type: "^(?!SERVER)+NOTICE+$",//notice not server notice
-                    classes: '',
-                    beep: true,
-                    tabhl: ui.HIGHLIGHT.speech,
-                    id: 'notice'
-                },
-                {
-                    type: "PRIVMSG$",
-                    flash: true,
-                    beep: true,
-                    pm: true,
-                    tabhl: ui.HIGHLIGHT.speech,
-                    id: 'pm'
-                },
-                {
-                    type: "^OUR",
-                    classes: 'our-msg',
-                    id: 'ourmsg'
-                },
-                {//match bots
-                    nick: "(^tf2)|((serv|bot)$)",
-                    classes: 'bot',
-                    types: [ui.WINDOW.channel],
-                    "case": true,
-                    id: 'bot'
-                },
-                {
-                    msg: "^\\!",
-                    classes: 'command',
-                    types: [ui.WINDOW.channel],
-                    id: 'cmd'
-                },
-                {
-                    mentioned: true,
-                    highlight: 'mentioned',
-                    notus: true,
-                    tabhl: ui.HIGHLIGHT.us,
-                    id: 'mention'
-                },
-                {
-                    nick: "^((?!(^tf2|bot$|serv$)).)*$",
-                    mentioned: true,
-                    classes: '',
-                    beep: true,
-                    pm: true,
-                    notus: true,
-                    "case": true,
-                    id: 'onmention'
-                },
-                {
-                    nick: "^((?!(^tf2|bot$|serv$)).)*$",
-                    msg: "^((?!(^\\!)).)*$", //dont hl commands
-                    classes: '',
-                    highlight: true,
-                    notus: true,
-                    "case": true,
-                    tabhl: ui.HIGHLIGHT.activity,
-                    types: [ui.WINDOW.channel],
-                    id: 'hl'
-                }
-            ],
-
-            "custom_notices": []
-        },
+        // defaults: defaultOptions,
         key: cookies.options,
         minimize: true
     },
@@ -3672,7 +3674,7 @@ irc.IRCClient = new Class({
 
     quit: function(message, notify) {
         if(this.isConnected()) {
-            this.send("QUIT :" + (message || lang.quit), false);
+            this.send("QUIT :" + (message || lang.quit), false);//stackoverflow.com/questions/3584288
             if(notify) {//get out quick
                 _.each(this.activeTimers, $clear);
                 this.activeTimers = {};
@@ -3770,7 +3772,7 @@ irc.IRCClient = new Class({
     //needs a rewrite with a proper list implementation
     getPopularChannels: function(cb, minUsers) {
         this.hidelistout = true;
-        this.exec('/list >' + (minUsers || 75)); //request chans with more than 75 users
+        this.exec('/list >' + (minUsers || 50)); //request chans with more than 75 users
         this.addEvent("listend:once", function() {
             var chans = _.chain(this.listedChans)
                         .clone()
@@ -4845,320 +4847,300 @@ irc.IRCClient = new Class({
 // /* This could do with a rewrite from scratch. */
 //going to rewrite using socket.io commet.
 // //uris = dict(p=push, n=newConnection, s=subscribe)
-irc.TwistedConnection = new Class({
-    Implements: [Events, Options],
-    Binds: ["send"],
-    options: {
-        initialNickname: "ircconnX",
-        minTimeout: 45000,
-        maxTimeout: 5 * 60000,
-        timeoutIncrement: 10000,
-        initialTimeout: 65000,
-        floodInterval: 200,
-        floodMax: 10,
-        floodReset: 5000,
-        errorAlert: true,
-        maxRetries: 5,
-        serverPassword: null
-    },
-    connected: false,
-    counter: 0,
+(function() {
+    //http://blog.mibbit.com/?p=143
+    // moved browser specific headers to be removed here so it doesnt have to be computed each connection.
+    // header nullables are browser dependent
+    var killBit = "";
+    var killHeaders = {//http://www.w3.org/TR/XMLHttpRequest/#dom-xmlhttprequest-setrequestheader
+        // "User-Agent": killBit,
+        "Accept": killBit,
+        "Accept-Language": killBit
+        /*,
+        "Content-Type": "M"*/
+    };
 
-    __sendQueue: [],
-    __lastActiveRequest: null,
-    __activeRequest: null,
-    __sendQueueActive: false,
+    irc.TwistedConnection = new Class({
+        Implements: [Events, Options],
+        Binds: ["send"],
+        options: {
+            initialNickname: "",
+            minTimeout: 45000,
+            maxTimeout: 5 * 60000,
+            timeoutIncrement: 10000,
+            initialTimeout: 65000,
+            floodInterval: 200,
+            floodMax: 10,
+            floodReset: 5000,
+            errorAlert: true,
+            maxRetries: 5,
+            serverPassword: null
+        },
+        connected: false,
+        counter: 0,
 
-    __floodLastRequest: 0,
-    __retryAttempts: 0,
-    __floodCounter: 0,
-    __floodLastFlood: 0,
-    __timeoutId: null,
+        __sendQueue: [],
+        __lastActiveRequest: null,
+        __activeRequest: null,
+        __sendQueueActive: false,
+
+        __floodLastRequest: 0,
+        __retryAttempts: 0,
+        __floodCounter: 0,
+        __floodLastFlood: 0,
+        __timeoutId: null,
 
 
+        initialize: function(options) {
+            this.setOptions(options);
+            this.__timeout = this.options.initialTimeout;
+        },
 
-    initialize: function(options) {
-        this.setOptions(options);
-        this.__timeout = this.options.initialTimeout;
-    },
+        connect: function() {
+            var self = this;
+            self.connected = true;
+            self.cacheAvoidance = util.randHexString(16);
+            var request = self.newRequest("n");
 
-    connect: function() {
-        var self = this;
-        self.connected = true;
-        self.cacheAvoidance = util.randHexString(16);
-        var request = self.newRequest("n");
-
-        request.addEvent("complete", function(stream) {
-            if (!stream) {
-                self.connected = false;
-                self.__error(lang.connectionFail);
-                return;
-            }
-            else if (!stream[0]) {
-                self.disconnect();
-                self.__error(lang.connError, stream);
-                return;
-            }
-            self.sessionid = stream[1];
-            self.recv();
-        });
-
-        var postdata = "nick=" + encodeURIComponent(self.options.initialNickname);
-        if ($defined(self.options.serverPassword)) {
-            postdata += "&password=" + encodeURIComponent(self.options.serverPassword);
-        }
-        request.send(postdata);
-    },
-
-    disconnect: function() {
-        this.connected = false;
-        this.__cancelTimeout();
-        this.__cancelRequests();
-    },
-
-    newRequest: function(url, floodProtection, synchronous) {
-        var self = this;
-        //check if request should proceed
-        if (!self.connected) {
-            return null;
-        } else if (floodProtection && self.__isFlooding()) {
-            self.disconnect();
-            self.__error(lang.uncontrolledFlood);
-        }
-        var request = new Request.JSON({
-            url: qwebirc.global.dynamicBaseURL + "e/" + url + "?r=" + self.cacheAvoidance + "&t=" + self.counter++,
-            async: !synchronous
-        });
-
-        // try to minimise the amount of headers 
-        request.headers = {};
-
-        //calls forEach on headers to be removed in the context of the request.xhr on readystatechange.
-        //calls setXHRHeaders in the context of the request.xhr object
-        // request.addEvent("request", _.partial(irc.TwistedConnection.setXHRHeaders, request.xhr));
-        if (Browser.ie && Browser.version < 8) {
-            request.setHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
-        }
-        return request;
-    },
-
-    recv: function() {
-        var self = this,
-            request = self.newRequest("s", true);
-        if (!$defined(request)) {
-            return;
-        }
-        self.__activeRequest = request;
-        request.__replaced = false;
-        var onComplete = function(stream) {
-            // replaced requests... 
-            if (request.__replaced) {
-                self.__lastActiveRequest = null;
-                if (stream) {
-                    self.__processData(stream);
+            request.addEvent("complete", function(stream) {
+                if (!stream) {
+                    self.connected = false;
+                    self.__error(lang.connectionFail);
+                    return;
+                } else if (!stream[0]) {
+                    self.disconnect();
+                    self.__error(lang.connError, stream);
+                    return;
                 }
+                self.sessionid = stream[1];
+                self.recv();
+            });
+
+            var postdata = "nick=" + encodeURIComponent(self.options.initialNickname);
+            if ($defined(self.options.serverPassword)) {
+                postdata += "&password=" + encodeURIComponent(self.options.serverPassword);
+            }
+            request.send(postdata);
+        },
+
+        disconnect: function() {
+            this.connected = false;
+            this.__cancelTimeout();
+            this.__cancelRequests();
+        },
+
+        newRequest: function(url, floodProtection, synchronous) {
+            var self = this;
+            //check if request should proceed
+            if (!self.connected) {
+                return null;
+            } else if (floodProtection && self.__isFlooding()) {
+                self.disconnect();
+                self.__error(lang.uncontrolledFlood);
+            }
+            var request = new Request.JSON({
+                url: qwebirc.global.dynamicBaseURL + "e/" + url + "?r=" + self.cacheAvoidance + "&t=" + self.counter++,
+                async: !synchronous
+            });
+
+            // try to minimise the amount of headers 
+            request.headers = {};//{X-Requested-With: "XMLHttpRequest", Accept: "application/json", X-Request: "JSON"}
+            request.addEvent("request", function() {
+                Object.each(killHeaders, function(val, key) {
+                    try {
+                        request.xhr.setRequestHeader(key, val);
+                    } catch (o_O) {
+                        delete killHeaders[key];//cant set header on this browser
+                    }
+                });
+            });
+
+            if (Browser.ie && Browser.version < 8) {
+                request.setHeader("If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT");
+            }
+            return request;
+        },
+
+        recv: function() {
+            var self = this,
+                request = self.newRequest("s", true);
+            if (request == null) {
                 return;
             }
-            // the main request 
-            self.__activeRequest = null;
-            self.__cancelTimeout();
-            if (!stream) {
-                if (self.connected && self.__checkRetries()) {
+            self.__activeRequest = request;
+            request.__replaced = false;
+            var onComplete = function(stream) {
+                // replaced requests... 
+                if (request.__replaced) {
+                    self.__lastActiveRequest = null;
+                    if (stream) {
+                        self.__processData(stream);
+                    }
+                    return;
+                }
+                // the main request 
+                self.__activeRequest = null;
+                self.__cancelTimeout();
+                if (!stream) {
+                    if (self.connected && self.__checkRetries()) {
+                        self.recv();
+                    }
+                    return;
+                } else if (self.__processData(stream)) {
                     self.recv();
                 }
+            };
+            request.addEvent("complete", onComplete);
+            self.__scheduleTimeout();
+            request.send("s=" + self.sessionid);
+        },
+
+        send: function(data, synchronous) {
+            if (!this.connected) {
+                return false;
+            }
+            if (synchronous) {
+                this.__send(data, false);
+            } else {
+                this.__sendQueue.push(data);
+                this.__processSendQueue();
+            }
+            return true;
+        },
+
+        __processSendQueue: function() {
+            if (this.__sendQueueActive || this.__sendQueue.length === 0) {
                 return;
             }
-            else if (self.__processData(stream)) {
-                self.recv();
+            this.sendQueueActive = true;
+            this.__send(this.__sendQueue.shift(), true);
+        },
+
+        __send: function(data, async) {
+            var request = this.newRequest("p", false, !async);
+            if (request === null) {
+                return;
             }
-        };
-        request.addEvent("complete", onComplete);
-        self.__scheduleTimeout();
-        request.send("s=" + self.sessionid);
-    },
-
-    send: function(data, synchronous) {
-        if (!this.connected) {
-            return false;
-        }
-        if (synchronous) {
-            this.__send(data, false);
-        } else {
-            this.__sendQueue.push(data);
-            this.__processSendQueue();
-        }
-        return true;
-    },
-
-    __processSendQueue: function() {
-        if (this.__sendQueueActive || this.__sendQueue.length === 0) {
-            return;
-        }
-        this.sendQueueActive = true;
-        this.__send(this.__sendQueue.shift(), true);
-    },
-
-    __send: function(data, async) {
-        var request = this.newRequest("p", false, !async);
-        if (request === null) {
-            return;
-        }
-        request.addEvent("complete", _.bind(this.__completeRequest, this, async))
+            request.addEvent("complete", _.bind(this.__completeRequest, this, async))
                 .send("s=" + this.sessionid + "&c=" + encodeURIComponent(data));
-    },
+        },
 
-    __completeRequest: function(async, stream) {
-        if (async) {
-            this.__sendQueueActive = false;
-        }
-        if (!stream || (!stream[0])) {
-            this.__sendQueue = [];
-            if (this.connected) {
-                this.connected = false;
-                this.__error(lang.connError, stream);
+        __completeRequest: function(async, stream) {
+            if (async) {
+                this.__sendQueueActive = false;
             }
+            if (!stream || (!stream[0])) {
+                this.__sendQueue = [];
+                if (this.connected) {
+                    this.connected = false;
+                    this.__error(lang.connError, stream);
+                }
+                return false;
+            }
+            this.__processSendQueue();
+        },
+
+        __isFlooding: function() {
+            var t = Date.now(),
+                floodt = t - this.__floodLastRequest;
+            if (floodt < this.options.floodInterval) {
+                if (this.__floodLastFlood !== 0 && (floodt > this.options.floodReset)) {
+                    this.__floodCounter = 0;
+                }
+                this.__floodLastFlood = t;
+                if (++this.__floodCounter > this.options.floodMax) {
+                    return true;
+                }
+            }
+            this.__floodLastRequest = t;
             return false;
-        }
-        this.__processSendQueue();
-    },
+        },
 
-    __isFlooding: function() {
-        var t = Date.now(),
-            floodt = t - this.__floodLastRequest;
-        if (floodt < this.options.floodInterval) {
-            if (this.__floodLastFlood !== 0 && (floodt > this.options.floodReset)) {
-                this.__floodCounter = 0;
+        __checkRetries: function() { /* hmm, something went wrong! */
+            if (++this.__retryAttempts > this.options.maxRetries && this.connected) {
+                this.disconnect();
+                this.__error(lang.connTimeOut, {
+                    retryAttempts: this.__retryAttempts
+                });
+                return false;
             }
-            this.__floodLastFlood = t;
-            if (++this.__floodCounter > this.options.floodMax) {
-                return true;
+            var to = this.__timeout - this.options.timeoutIncrement;
+            if (to >= this.options.minTimeout) {
+                this.__timeout = to;
             }
-        }
-        this.__floodLastRequest = t;
-        return false;
-    },
+            return true;
+        },
 
-    __checkRetries: function() { /* hmm, something went wrong! */
-        if (++this.__retryAttempts > this.options.maxRetries && this.connected) {
-            this.disconnect();
-            this.__error(lang.connTimeOut, {retryAttempts: this.__retryAttempts});
-            return false;
-        }
-        var to = this.__timeout - this.options.timeoutIncrement;
-        if (to >= this.options.minTimeout) {
-            this.__timeout = to;
-        }
-        return true;
-    },
-
-    __cancelRequests: function() {
-        if ($defined(this.__lastActiveRequest)) {
-            this.__lastActiveRequest.cancel();
-            this.__lastActiveRequest = null;
-        }
-        if ($defined(this.__activeRequest)) {
-            this.__activeRequest.cancel();
-            this.__activeRequest = null;
-        }
-    },
-
-    __processData: function(o) {
-        if (o[0] == false) {
-            if (this.connected) {
-                this.connected = false;
-                this.__error(lang.connError, o);
+        __cancelRequests: function() {
+            if ($defined(this.__lastActiveRequest)) {
+                this.__lastActiveRequest.cancel();
+                this.__lastActiveRequest = null;
             }
-            return false;
-        }
+            if ($defined(this.__activeRequest)) {
+                this.__activeRequest.cancel();
+                this.__activeRequest = null;
+            }
+        },
 
-        this.__retryAttempts = 0;
-        o.each(function(x) {
-            this.fireEvent("recv", [x]);
-        }, this);
+        __processData: function(o) {
+            if (o[0] == false) {
+                if (this.connected) {
+                    this.connected = false;
+                    this.__error(lang.connError, o);
+                }
+                return false;
+            }
 
-        return true;
-    },
+            this.__retryAttempts = 0;
+            o.each(function(x) {
+                this.fireEvent("recv", [x]);
+            }, this);
+
+            return true;
+        },
 
 
-    __scheduleTimeout: function() {
-        this.__timeoutId = this.__timeoutEvent.delay(this.__timeout, this);
-    },
+        __scheduleTimeout: function() {
+            this.__timeoutId = this.__timeoutEvent.delay(this.__timeout, this);
+        },
 
-    __cancelTimeout: function() {
-        if ($defined(this.__timeoutId)) {
-            $clear(this.__timeoutId);
+        __cancelTimeout: function() {
+            if ($defined(this.__timeoutId)) {
+                $clear(this.__timeoutId);
+                this.__timeoutId = null;
+            }
+        },
+
+        __timeoutEvent: function() {
             this.__timeoutId = null;
+            if (!$defined(this.__activeRequest)) {
+                return;
+            } else if (this.__lastActiveRequest) {
+                this.__lastActiveRequest.cancel();
+            }
+            this.fireEvent("timeout", {
+                duration: this.__timeout
+            });
+            this.__activeRequest.__replaced = true;
+            this.__lastActiveRequest = this.__activeRequest;
+            var to = this.__timeout + this.options.timeoutIncrement;
+            if (to <= this.options.maxTimeout) {
+                this.__timeout = to;
+            }
+            this.recv();
+        },
+
+        __error: function(message, context) {
+            var msg = context ? util.formatter(message.message, context) : message.message;
+            this.fireEvent("error", msg);
+            if (this.options.errorAlert) {
+                alert(msg);
+            }
+            console.log('had error:' + msg);
         }
-    },
+    });
+})();
 
-    __timeoutEvent: function() {
-        this.__timeoutId = null;
-        if (!$defined(this.__activeRequest)) {
-            return;
-        } else if (this.__lastActiveRequest) {
-            this.__lastActiveRequest.cancel();
-        }
-        this.fireEvent("timeout", {
-            duration: this.__timeout
-        });
-        this.__activeRequest.__replaced = true;
-        this.__lastActiveRequest = this.__activeRequest;
-        var to = this.__timeout + this.options.timeoutIncrement;
-        if (to <= this.options.maxTimeout) {
-            this.__timeout = to;
-        }
-        this.recv();
-    },
-
-    __error: function(message, context) {
-        var msg = context ? util.formatter(message.message, context) : message.message;
-        this.fireEvent("error", msg);
-        if (this.options.errorAlert) {
-            alert(msg);
-        }
-        console.log('had error:' + msg);
-    }
-});
-
-// (function() {//http://blog.mibbit.com/?p=143
-//     //moved browser specific headers to be removed here so it doesnt have to be computed each connection.
-//     //header nullables are browser dependent
-//     //http://www.michael-noll.com/tutorials/cookie-monster-for-xmlhttprequest/
-//     // var killBit = null;
-
-//     // var kill = {
-//     //     "User-Agent": killBit,
-//     //     "Accept": killBit,
-//     //     "Accept-Language": killBit,
-//     //     "Content-Type": "M",
-//     //     "Connection": "keep-alive",
-//     //     "Keep-Alive": killBit
-//     // };
-
-//     // //removes a header from an xhr object (this instanceof xhr)
-
-//     // function removeHeaders(val, header) {
-//     //     try {
-//     //         this.setRequestHeader(header, val);
-//     //     } catch (e) {console.log(header)}
-//     // }
-
-
-
-//     //iteratres the headers to be removed with the removeHeaders function
-//     //expects a xhr object as the third param 
-//     // conn.setXHRHeaders = function(xhr) {
-//     //     kill.each(removeHeaders, xhr);
-//     //     //remove cookies from xhr
-//     //     // new CookieMonster(xhr);
-//     // };
-
-//     irc.TwistedConnection.setXHRHeaders = _.identity; //_.partial(_.each, kill, removeHeaders);
-
-//     // conn.setXHRHeaders = function(xhr) {
-//     //     kill.each(removeHeaders, xhr);
-//     // };
-// })();
 
 irc.IRCTracker = new Class({
     channels: {},
@@ -5858,8 +5840,8 @@ ui.IUIOptions = new Class({
         var self = this;
         var options = self.options;
         if(self.uiOptions instanceof config.OptionModel) return this;
-        var uiOptions = self.uiOptions = self.uiOptions2 = new config.OptionModel({
-            defaults: options.uiOptionsArg
+        var uiOptions = self.uiOptions = self.uiOptions2 = new config.OptionModel({}, {
+            defaults: options.uiOptions
         });
         function setNotices() {
             var notices = uiOptions.get("standard_notices").concat(uiOptions.get("custom_notices"));
@@ -5877,7 +5859,7 @@ ui.IUIOptions = new Class({
                         tabhl: notice.tabhl,
                         classes: notice.classes,
                         types: notice.types
-                    };
+                    }
                     _.each(["msg", "nick", "type"], function(type) {
                         if(notice[type]) {
                             onotice[type] = new RegExp(notice.autoescape ? String.escapeRegExp(notice[type]) : notice[type],//format regex
@@ -5887,7 +5869,7 @@ ui.IUIOptions = new Class({
 
                     return _.clean(onotice);
                 })
-                .value();
+                .value()
             
             self.theme.messageParsers.empty().combine(notifiers);
             self.theme.config = uiOptions;
@@ -6411,15 +6393,12 @@ ui.Interface = new Class({
             }]
         },
 
-        hue: null,
-        saturation: null,
-        lightness: null,
-
         theme: undefined,
-        uiOptionsArg: null,
+        uiOptions: defaultOptions,//defined in config/options.js
 
         socketio: "//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js",
 
+        //response when auth successful
         loginRegex: /I recogni[sz]e you\./
     },
     clients: [],
@@ -6431,11 +6410,25 @@ ui.Interface = new Class({
         var self = this;
         var settings = self.options.settings = new config.Settings(options.settings);
         
-        //parse query string
+        //parse query string be careful it will override 
         var query = window.location.search;
         if(query) {
             var parsed = query.slice(1).parseQueryString();
-            if(parsed.channels) settings.set("channels", concatUnique(settings.get("channels"), util.unformatChannelString(parsed.channels)));
+
+            if(parsed.channels) {//append query string channels to saved channels
+                parsed.channels = concatUnique(settings.get("channels"), util.unformatChannelString(parsed.channels));
+            }
+
+            var softextend = function(obj) {//only sets vals if they exist on the object
+                _.each(parsed, function(val, key) {
+                    if(_.has(obj, key)) {
+                        obj[key] = +val == val ? +val : val;//coerce nums
+                    }
+                });
+            };
+
+            softextend(options.uiOptions);
+            softextend(options.settings._attributes);//poor practice
         }
 
         window.addEvent("domready", function() {
@@ -6475,9 +6468,7 @@ ui.Interface = new Class({
                         return message;
                     }
                 };
-                window.addEvent("unload", function() {
-                    client.quit();
-                });
+                window.addEvent("unload", client.quit);
 
                 self.fireEvent("login", {
                     'IRCClient': client,
@@ -6490,7 +6481,7 @@ ui.Interface = new Class({
         ui.WelcomePane.show(this.ui, _.extend({
             element: this.element,
             firstvisit: true
-        }, this.options)); 
+        }, this.options));
     }
 });
 
@@ -7839,15 +7830,14 @@ var PanelView = new Class({
         return this.destroy();
     }
 });
-//this must refer to a model
 function toggleNotifications(model, state, save) {
     if(notify.permissionLevel() !== notify.PERMISSION_GRANTED) {
         notify.requestPermission(function() {
-            model.set('dn_state', notify.permissionLevel() === notify.PERMISSION_GRANTED);
+            toggleNotifications(model, notify.permissionLevel() === notify.PERMISSION_GRANTED, save);
         });
     }
     else {
-        model.set('dn_state', state || !model.get('dn_state'));
+        model.set('dn_state', state != null ? !!state : !model.get('dn_state'));
     }
     if(save) model.save();
 }

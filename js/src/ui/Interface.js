@@ -30,15 +30,12 @@ ui.Interface = new Class({
             }]
         },
 
-        hue: null,
-        saturation: null,
-        lightness: null,
-
         theme: undefined,
-        uiOptionsArg: null,
+        uiOptions: defaultOptions,//defined in config/options.js
 
         socketio: "//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js",
 
+        //response when auth successful
         loginRegex: /I recogni[sz]e you\./
     },
     clients: [],
@@ -51,10 +48,26 @@ ui.Interface = new Class({
         var settings = self.options.settings = new config.Settings(options.settings);
         
         //parse query string
+        // it will override any non cached (localstorage/cookie) options for uiOptions and settings
+        //so ?nickname=test&style_saturation=30 will set the saturation to 30 and the initial nickname to test
         var query = window.location.search;
         if(query) {
             var parsed = query.slice(1).parseQueryString();
-            if(parsed.channels) settings.set("channels", concatUnique(settings.get("channels"), util.unformatChannelString(parsed.channels)));
+
+            if(parsed.channels) {//append query string channels to saved channels
+                parsed.channels = concatUnique(settings.get("channels"), util.unformatChannelString(parsed.channels));
+            }
+
+            var softextend = function(obj) {//only sets vals if they exist on the object
+                _.each(parsed, function(val, key) {
+                    if(_.has(obj, key)) {
+                        obj[key] = +val == val ? +val : val;//coerce nums
+                    }
+                });
+            };
+
+            softextend(options.uiOptions);
+            softextend(options.settings._attributes);//poor practice
         }
 
         window.addEvent("domready", function() {

@@ -185,7 +185,7 @@ irc.IRCClient = new Class({
     //needs a rewrite with a proper list implementation
     getPopularChannels: function(cb, minUsers) {
         this.hidelistout = true;
-        this.exec('/list >' + (minUsers || 75)); //request chans with more than 75 users
+        this.exec('/list >' + (minUsers || 50)); //request chans with more than 75 users
         this.addEvent("listend:once", function() {
             var chans = _.chain(this.listedChans)
                         .clone()
