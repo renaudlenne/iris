@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # this entire thing is a hack and badly needs reimplementing
-import bin.compile
-bin.compile.vcheck()
+# import bin.compile
+# bin.compile.vcheck()
 
-DEFAULT_PORT = 9090
+import os
+
+DEFAULT_PORT = int(os.environ.get("PORT", 9090))
 
 from optparse import OptionParser
 import sys, os
