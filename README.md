@@ -1,16 +1,35 @@
+QWebirc-enhancements on Iris
+=============  
+
+This is my qwebirc frontend running on (a slightly adapted - 3 files changed) iris server. See branches if you want to see some pre-configured instances. 
+
 An instance of this code is up at http://geeks-irc.herokuapp.com
 
+##Installation
 
-Outdated installation instructions are at https://github.com/atheme/iris
+- Clone the repo and the submodule:
+`git clone --recursive git@github.com:megawac/iris.git [-b Branch]`
 
-Additional dependencies:  
-* Node and node package manager (>= 0.6.0) --- see `package.json`
-  
-To get started configure the `config.py` file as necessary and compile the static resources as follows:  
+- Install the server python dependencies ([outdated installation instructions](https://github.com/atheme/iris)):
+`pip install -r requirements.txt`
+
+- Install [node.js](nodejs.org)
+
+- Configure qwebirc web application settings (go to static/configure/config.js)
+
+- Install front end build dependencies and build:
 ```
+cd static
 npm install
-grunt
+grunt [--verbose]
 ```
-Now that all static files are set up and your config.py is configured for your irc server run `run.py` and navigate to `127.0.0.1:9090` and sign into the qwebirc instance.  
 
-Now that everythings configured you can begin changing files. Run `grunt` after updating static resources to recompile the application.
+- Configure server settings (server ip, port, etc) in config.py
+
+- Run server
+`python run.py`
+Default port is 9090 or 5000
+
+## Making changes
+
+Most changes will require a server restart or a grunt build. If you make changes to the python code you may need to restart the server. Making changes to most of the javascript or css files will require you to run grunt to recompile the static resources.
