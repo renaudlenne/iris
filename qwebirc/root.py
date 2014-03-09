@@ -79,6 +79,7 @@ class RootSite(server.Site):
     register(engines.AJAXEngine, "e")
     register(engines.FeedbackEngine, "feedback")
     register(engines.AdminEngine, "adminengine", services)
+    register(engines.LocalizationEngine, "lang")
     if config.athemeengine["xmlrpc_path"]:
       register(engines.AthemeEngine, "a")
     
