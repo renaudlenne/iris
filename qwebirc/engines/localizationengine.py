@@ -8,7 +8,13 @@ class AJAXException(Exception):
 
 class PassthruException(Exception):
   pass
-  
+
+def getJSON(path):
+  file = open(path)
+  data = json.load(file)
+  file.close()
+  return data
+
 class LocalizationEngine(resource.Resource):
   isLeaf = True
   localePath = "static/lang/"
@@ -23,16 +29,32 @@ class LocalizationEngine(resource.Resource):
     """
     Request a localization and respond with json object of appropriate locale
     """
-    lang_header = request.headers.get("Accept-Language", "en")
-    locales = [locale.split(';')[0] for locale in lang_header.split(',')]
+    setLocales = request.getCookie("i18n") #preferred locale (todo implement)?
+    locales = []
+    if setLocales:
+      locales = json.load(setLocales)
+    else:
+      lang_header = request.headers.get("Accept-Language", "en") # for example en-US,en;q=0.8,es;q=0.6
+      locales = [locale.split(';')[0] for locale in lang_header.split(',')]
 
-    lang = json.load(open(self.localePath + "base.json"))
+    basePath = self.localePath + (request.args.get("path", [""])[0])
+    if not basePath.endswith("/"):
+      basePath += "/"
 
-    for locale in locales:
-      path = self.localePath + locale + ".json"
+    print basePath, "exists? " + str(os.path.exists(basePath)), "exists? " + str(os.path.exists(basePath + "base.json"))
+
+    if not os.path.exists(basePath):
+      raise http_error.NoResource().render(request)
+
+    lang = getJSON(basePath + "base.json")
+
+    # reverse so specificity overrides
+    for locale in reversed(locales):
+      path = basePath + locale + ".json"
       if os.path.exists(path):
-        lang.update(json.load(open(path)))
+        lang.update(getJSON(path))
 
+    request.addCookie("lang", json.dumps(locales))
     request.write(json.dumps(lang))
     request.finish()
 
