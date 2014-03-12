@@ -3,22 +3,7 @@ from qwebirc.util.gziprequest import GZipRequest
 import qwebirc.util as util
 import pprint
 from adminengine import AdminEngineAction
-
-# TODO, cache gzip stuff
-cache = {}
-def clear_cache():
-  global cache
-  cache = {}
-
-def apply_gzip(request):
-  accept_encoding = request.getHeader('accept-encoding')
-  if accept_encoding:
-    encodings = accept_encoding.split(',')
-    for encoding in encodings:
-      name = encoding.split(';')[0].strip()
-      if name == 'gzip':
-        request = GZipRequest(request)
-  return request
+from qwebirc.util.caching import cache
 
 class StaticEngine(static.File):
   isLeaf = False
@@ -29,6 +14,7 @@ class StaticEngine(static.File):
     
   def render(self, request):
     self.hit(request)
+    cache(request)
     request = apply_gzip(request)
     return static.File.render(self, request)
     
