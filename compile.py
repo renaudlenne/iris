@@ -4,8 +4,16 @@ import bin.merge as merge
 working_dir = r"static"
 
 #update submodules to latest version ie static
-submod_update = subprocess.Popen(shlex.split("git submodule foreach git pull origin master"), shell=True)
-submod_update.wait() #wait to complete before build
+#see http://stackoverflow.com/questions/1030169/easy-way-pull-latest-of-all-submodules
+#step by step by step
+s1 = subprocess.Popen(shlex.split("git pull"))
+s1.wait() #wait to complete before build
+s2 = subprocess.Popen(shlex.split("git submodule init"))
+s2.wait()
+s3 = subprocess.Popen(shlex.split("git submodule update"))
+s3.wait()
+s4 = subprocess.Popen(shlex.split("git submodule status"))
+s4.wait()
 
 #install build deps
 npm_install = subprocess.Popen(shlex.split("npm install"), cwd=working_dir, shell=True)
