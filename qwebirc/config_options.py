@@ -6,11 +6,9 @@ sections = [
     "athemeengine",
     "execution",
     "feedbackengine",
-    "frontend",
     "irc",
     "proxy",
-    "tuneback",
-    "ui",
+    "tuneback"
 ]
 
 booleans = [
@@ -18,20 +16,7 @@ booleans = [
     ("atheme", "chan_list_cloud_view"),
     ("atheme", "chan_list_on_start"),
     ("athemeengine", "chan_list_enabled"),
-    ("frontend", "prompt"),
-    ("frontend", "chan_prompt"),
-    ("frontend", "chan_autoconnect"),
-    ("irc", "ssl"),
-    ("ui", "dedicated_msg_window"),
-    ("ui", "dedicated_notice_window"),
-    ("ui", "hide_joinparts"),
-    ("ui", "lastpos_line"),
-    ("ui", "nick_click_query"),
-    ("ui", "nick_colors"),
-    ("ui", "nick_status"),
-    ("ui", "flash_on_mention"),
-    ("ui", "beep_on_mention"),
-    ("ui", "simple_color"),
+    ("irc", "ssl")
 ]
     
 floats = [
@@ -61,16 +46,6 @@ lists = [
 strings = [
     ("athemeengine", "xmlrpc_path"),
     ("execution", "args"),
-    ("feedbackengine", "from"),
-    ("feedbackengine", "to"),
-    ("frontend", "base_url"),
-    ("frontend", "network_name"),
-    ("frontend", "app_title"),
-    ("frontend", "extra_html"),
-    ("frontend", "initial_nick"),
-    ("frontend", "initial_chans"),
-    ("frontend", "static_base_url"),
-    ("frontend", "dynamic_base_url"),
     ("proxy", "forwarded_for_header"),
     ("irc", "server"),
     ("irc", "bind_ip"),
@@ -78,8 +53,5 @@ strings = [
     ("irc", "ident"),
     ("irc", "ident_string"),
     ("irc", "webirc_mode"),
-    ("irc", "webirc_password"),
-    ("ui", "fg_color"),
-    ("ui", "fg_sec_color"),
-    ("ui", "bg_color"),
+    ("irc", "webirc_password")
 ]

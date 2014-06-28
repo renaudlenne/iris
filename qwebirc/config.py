@@ -110,17 +110,6 @@ def __interpret_config():
     if atheme["nickserv_login"] == False:
         atheme["sasl_type"] = False
 
-    # If no secondary foreground colour was specified, use the primary.
-    if not "fg_sec_color" in ui:
-        ui["fg_sec_color"] = ui["fg_color"]
-
-    # If there is no privacy policy, set a setting to indicate this to the
-    # frontend, disabling the privacy policy pane.
-    if not os.access("static/panes/privacypolicy.html", os.F_OK):
-        ui["privacy"] = False
-    else:
-        ui["privacy"] = True
-
     if irc["ssl"]:
         try:
             from twisted.internet.ssl import ClientContextFactory
@@ -129,12 +118,8 @@ def __interpret_config():
 
 
 def js_config():
-    f = frontend.copy()
-    del f["extra_html"] # already injected by pagegen.
     options = {
-        'atheme': atheme,
-        'frontend': f,
-        'ui': ui,
+        'atheme': atheme
     }
     return json.dumps(options)
 
