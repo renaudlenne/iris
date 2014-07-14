@@ -38,7 +38,6 @@ integers = [
 ]
 
 lists = [
-    ("adminengine", "hosts"),
     ("execution", "syslog_addr"),
     ("proxy", "forwarded_for_ips"),
 ]

@@ -58,11 +58,7 @@ def __interpret_config():
     sections = globals()
 
     for section, option in options.booleans:
-        if sections[section][option] == "true" or \
-                sections[section][option] == "yes":
-            sections[section][option] = True
-        else:
-            sections[section][option] = False
+        sections[section][option] = sections[section][option] == "true" or sections[section][option] == "yes"
 
     for section, option in options.floats:
         if sections[section][option] == "":
