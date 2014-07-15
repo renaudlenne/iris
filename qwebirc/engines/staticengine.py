@@ -15,7 +15,7 @@ class StaticEngine(static.File):
   def render(self, request):
     self.hit(request)
     cache(request)
-    request = apply_gzip(request)
+    request = util.apply_gzip(request)
     return static.File.render(self, request)
     
   @property
