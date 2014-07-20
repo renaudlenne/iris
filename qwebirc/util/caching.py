@@ -11,6 +11,8 @@ def cache(request, expires=None, public=True):
     '''
     if expires is None:
         expires = int(config.tuneback["http_cache_period"])
+    if expires <= 0:
+        return request
     
     #set expires header
     expiry = (date.today() + timedelta(expires)).timetuple()
