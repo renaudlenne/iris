@@ -2,10 +2,16 @@ from wsgiref.handlers import format_date_time as format_date
 from datetime import date, timedelta
 from time import mktime
 
-'''
-   Sets the cache headers for a (static resource) request
-'''
-def cache(request, expires=30, public=True):
+import qwebirc.config as config
+
+
+def cache(request, expires=None, public=True):
+    '''
+    Sets the cache headers for a (static resource) request
+    '''
+    if expires is None:
+        expires = int(config.tuneback["http_cache_period"])
+    
     #set expires header
     expiry = (date.today() + timedelta(expires)).timetuple()
     request.responseHeaders.setRawHeaders("expires" , [format_date(mktime(expiry))])
@@ -17,7 +23,5 @@ def cache(request, expires=30, public=True):
     else:
         cache_control += ", private"
     request.responseHeaders.setRawHeaders("cache-control", [cache_control])
- 
-    print dir(request)
 
     return request
