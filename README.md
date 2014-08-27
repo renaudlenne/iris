@@ -1,9 +1,9 @@
 QWebIRC-enhancements via Iris
 =============  
 
-Hacked up Iris server to provide Atheme RPC, localization, and an improved build step for my [qwebirc fork](https://github.com/megawac/qwebirc-enhancements). See branches of this repo if you want to see some pre-configured instances. 
+Hacked up Iris server to provide Atheme RPC, localization, and an improved build step for my [qwebirc fork](https://github.com/megawac/qwebirc-enhancements). See branches of this repo if you want to see some pre-configured instances.
 
-An instance of this code is up at http://geeks-irc.herokuapp.com
+An instance of this code is up at http://atf2.org
 
 ##Installation
 
@@ -15,16 +15,20 @@ An instance of this code is up at http://geeks-irc.herokuapp.com
 
 - Install [node.js](nodejs.org)
 
-- Configure qwebirc web application settings (go to `/frontend-config.yml`)
+- Configure and update [static repo](https://github.com/megawac/qwebirc-enhancements/) -- I attempt to do this in compile.py but it's out of date
 
-- **Build the static files** Run `compile.py` which will install the build dependencies for the static files, merge the `frontend-config` with `static/app-config.yml` then build the files based on the conifg:
+```sh
+$ cd static
+$ git pull origin master
+# edit app-config.yml
+$ [sudo] npm i
+$ grunt
 ```
-python compily.py
-```
-- Configure server settings (server ip, port, etc) in config.py
+
+- Configure server settings (server ip, port, etc) in iris.conf (rename iris.conf.example)
 
 - Run server
-```
+```sh
 python run.py
 ```
 Default port is your environment default port or 9090
